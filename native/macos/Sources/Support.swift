@@ -18,7 +18,10 @@ func randomHex(_ count: Int) -> String {
 }
 
 func matches(_ text: String, _ pattern: String) -> Bool {
-    text.range(of: pattern, options: .regularExpression) != nil
+    // Telnet frames contain CRLF. Foundation's String.range conversion can
+    // reject a regex match at CR/LF grapheme boundaries; stay in UTF-16 here.
+    guard let regex = try? NSRegularExpression(pattern: pattern) else { return false }
+    return regex.firstMatch(in: text, range: NSRange(location: 0, length: (text as NSString).length)) != nil
 }
 
 func captures(_ text: String, _ pattern: String) -> [[String]] {
@@ -81,8 +84,13 @@ final class SocketChannel {
                     Darwin.connect(descriptor, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
                 }
             }
+            let connectError = errno
             if connected != 0 {
-                guard errno == EINPROGRESS else { throw InstallerFailure("Could not connect. Check the feeder's power, address and Wi-Fi.") }
+                guard connectError == EINPROGRESS else {
+                    let hint = [EHOSTUNREACH, EACCES, EPERM].contains(connectError)
+                        ? " If macOS requested Local Network access, allow it and choose Check compatibility again." : ""
+                    throw InstallerFailure("Could not connect. Check the feeder's power, address and Wi-Fi." + hint)
+                }
                 var item = pollfd(fd: descriptor, events: Int16(POLLOUT), revents: 0)
                 guard poll(&item, 1, Int32(timeout * 1000)) > 0 else { throw InstallerFailure("The local connection timed out.") }
                 var error: Int32 = 0

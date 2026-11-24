@@ -199,6 +199,12 @@ test("console command length is bounded before sending") {
     try rejects { _ = try TelnetTransport.envelope(String(repeating: "x", count: 2000), marker: "PFL_DONE_test") }
     try expect(try TelnetTransport.envelope("printf synthetic", marker: "PFL_DONE_test").count < 1000, "Small command rejected")
 }
+test("Telnet completion markers are recognized across real CRLF frames") {
+    let marker = "PFL_DONE_synthetic"
+    let response = "command output\r\n\(marker)0\r\n[root@ipc:/root]# "
+    try expect(matches(response, "\\r?\\n\(marker)\\d+\\r?\\n"), "Real Telnet completion frame was missed")
+    try expect(captures(response, marker + "(\\d+)\\r?\\n").first?[1] == "0", "Completion code was lost")
+}
 test("Telnet negotiation supports split packets and escaped IAC") {
     var decoder = TelnetDecoder(); var replies = [Data]()
     try expect(try decoder.clean(Data([97,255,253]), reply: { replies.append($0) }) == Data([97]), "Split negotiation lost data")

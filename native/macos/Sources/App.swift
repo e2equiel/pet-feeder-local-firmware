@@ -21,6 +21,7 @@ final class InstallerModel: ObservableObject {
     @Published var confirmRestore = false
     @Published var demo: Bool
     private var installer: FeederInstaller?
+    private var backupPanel: NSOpenPanel?
     private let queue = DispatchQueue(label: "io.github.e2equiel.pet-feeder-local.installer", qos: .userInitiated)
 
     init(demo: Bool) {
@@ -106,12 +107,25 @@ final class InstallerModel: ObservableObject {
     }
 
     func chooseBackups() {
+        guard !busy, backupPanel == nil else { return }
         let panel = NSOpenPanel()
         panel.title = "Choose where to keep private feeder backups"
         panel.prompt = "Use this folder"
         panel.canChooseDirectories = true; panel.canChooseFiles = false; panel.canCreateDirectories = true
         panel.directoryURL = backups
-        if panel.runModal() == .OK, let folder = panel.url { backups = folder }
+        backupPanel = panel
+        let selected: (NSApplication.ModalResponse) -> Void = { [weak self, weak panel] response in
+            guard let self, let panel else { return }
+            defer { if self.backupPanel === panel { self.backupPanel = nil } }
+            if response == .OK, let folder = panel.urls.first ?? panel.directoryURL {
+                DispatchQueue.main.async { self.backups = folder; self.message = "Private backup folder selected." }
+            }
+        }
+        if let window = NSApplication.shared.keyWindow {
+            panel.beginSheetModal(for: window, completionHandler: selected)
+        } else {
+            panel.begin(completionHandler: selected)
+        }
     }
 
     func copyToken() {

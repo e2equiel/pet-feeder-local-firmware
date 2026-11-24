@@ -24,3 +24,7 @@ RTSP uses TCP interleaving and HEVC: main video is port 8555, substream is port 
 Build with `make test` and `make rtsp` using an ARMv5TE GNU cross compiler. The preload must have both SysV and GNU hash tables. Before loading it, run `tools/check_imports.py` against a privately extracted original libc and perform an eager-loader check on the device. Vendor libraries are not distributed in this repository.
 
 The persistent launcher discards vendor application output instead of accumulating an unbounded RAM log while the cloud SDK retries offline connections. The small boot-validation log stays in RAM. `scripts/uninstall.sh` disables this overlay and its boot hook, restores the original executable path and routing, and retains the private token/journal for recovery.
+
+## LAN discovery
+
+The overlay answers bounded SSDP M-SEARCH requests for `urn:pet-feeder-local:device:Feeder:1` on UDP multicast 239.255.255.250:1900. `GET /description.xml` is intentionally unauthenticated and contains only the device type, project/model names, stable LAN identity and UDN. It contains no token, feeding data or camera URL. All `/api/v1/` endpoints remain authenticated. Discovery works on the local multicast segment; manual setup remains available across networks that do not carry SSDP.

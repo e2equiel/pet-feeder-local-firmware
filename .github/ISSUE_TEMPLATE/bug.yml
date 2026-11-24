@@ -1,0 +1,23 @@
+name: Bug report
+description: Report a reproducible problem without sharing private device data.
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Project version
+    validations:
+      required: true
+  - type: textarea
+    id: device
+    attributes:
+      label: Device and environment
+      description: Model, original firmware, overlay version, HA version and computer OS. No serial numbers or network credentials.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps and observed result
+      description: Include the installer stage or HA error, expected behavior, and whether the problem repeats. Do not upload flash backups, setup JSON, tokens or home video.
+    validations:
+      required: true

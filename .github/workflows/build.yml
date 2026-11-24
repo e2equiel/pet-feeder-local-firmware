@@ -1,0 +1,66 @@
+name: Build and test
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+permissions:
+  contents: read
+jobs:
+  firmware:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y gcc-arm-linux-gnueabi
+      - run: python -m pip install pyelftools==0.32
+      - run: make test rtsp
+      - run: python tools/check_imports.py build/pf_local.so --allowed tools/target-imports.txt
+      - run: python -m unittest discover -s installer/tests -v
+      - run: python tools/build_release.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: firmware-bundle
+          path: |
+            bundle/
+            dist/
+          if-no-files-found: error
+  portable:
+    needs: firmware
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: firmware-bundle
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.14'
+      - run: python -m pip install pyinstaller==6.16.0
+      - run: python tools/build_portable.py
+      - run: python tools/smoke_portable.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: installer-${{ runner.os }}-${{ runner.arch }}
+          path: dist/*
+          if-no-files-found: error
+      - name: Attach installers to an explicitly published release
+        if: github.event_name == 'release'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
+        with:
+          script: |
+            const fs = require('fs');
+            const files = fs.readdirSync('dist');
+            for (const name of files.filter(n => n.endsWith('.zip') || n.endsWith('.sha256'))) {
+              if (name.includes('source-installer') && process.platform !== 'linux') continue;
+              await github.rest.repos.uploadReleaseAsset({owner: context.repo.owner, repo: context.repo.repo,
+                release_id: context.payload.release.id, name, data: fs.readFileSync('dist/' + name)});
+            }

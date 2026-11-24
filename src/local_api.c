@@ -13,6 +13,7 @@
 #include "local_api.h"
 #include "mcu_protocol.h"
 #include "journal.h"
+#include "discovery.h"
 
 #ifdef __GLIBC__
 extern int uclibc_sscanf(const char *,const char *,...) __asm__("sscanf");
@@ -164,15 +165,17 @@ static void disconnect(void) {
     client=-1; input_used=0; pending=0;
 }
 
-static void respond(int status,const char *body) {
+static void respond_type(int status,const char *body,const char *content_type) {
     char output[4096];
     int length=snprintf(output,sizeof(output),
-        "HTTP/1.1 %d Response\r\nContent-Type: application/json\r\nConnection: close\r\nCache-Control: no-store\r\nContent-Length: %u\r\n\r\n%s",
-        status,(unsigned)strlen(body),body);
+        "HTTP/1.1 %d Response\r\nContent-Type: %s\r\nConnection: close\r\nCache-Control: no-store\r\nContent-Length: %u\r\n\r\n%s",
+        status,content_type,(unsigned)strlen(body),body);
     if (length>0 && length<(int)sizeof(output) && client>=0)
         (void)send(client,output,(size_t)length,MSG_DONTWAIT|MSG_NOSIGNAL);
     disconnect();
 }
+
+static void respond(int status,const char *body) { respond_type(status,body,"application/json"); }
 
 static void respond_schedule(int verified) {
     char body[2304];
@@ -279,9 +282,13 @@ static void set_clock(const char *body,size_t length) {
 static void request_ready(size_t header_length,size_t body_length) {
     char method[12]={0},path[128]={0},body[512];
     sscanf(input,"%11s %127s",method,path);
+    if (!strcmp(method,"GET") && !strcmp(path,"/description.xml")) {
+        char description[1024]; pf_description(description,sizeof(description),device_id);
+        respond_type(200,description,"application/xml"); return;
+    }
     if (!header_auth(input,header_length,"Bearer ",api_token)) { respond(401,"{\"error\":\"invalid_auth\"}"); return; }
     if (!strcmp(method,"GET") && !strcmp(path,"/api/v1/info")) {
-        snprintf(body,sizeof(body),"{\"api_version\":1,\"id\":\"%s\",\"model\":\"V330L-DU4L-VS\",\"version\":\"0.1.0-dev\",\"max_meals\":8,\"max_portions\":10,\"feeding_enabled\":%s,\"rtsp_port\":8555}",device_id,feeding_enabled && journal_ready ? "true":"false");
+        snprintf(body,sizeof(body),"{\"api_version\":1,\"id\":\"%s\",\"model\":\"V330L-DU4L-VS\",\"version\":\"0.2.0\",\"max_meals\":8,\"max_portions\":10,\"feeding_enabled\":%s,\"rtsp_port\":8555}",device_id,feeding_enabled && journal_ready ? "true":"false");
         respond(200,body);
     } else if (!strcmp(method,"GET") && !strcmp(path,"/api/v1/status")) {
         snprintf(body,sizeof(body),"{\"mcu_connected\":%s,\"schedule_revision\":\"%08x\",\"serial_fault\":%s,\"manual_commands_sent\":%u,\"clock_synced\":%s}",
@@ -360,6 +367,7 @@ void pf_api_tick(void) {
     drain_serial();
     if (!initialized) { initialized=1; initialize(); }
     if (listener<0) return;
+    pf_discovery_tick(device_id,milliseconds());
     if (pending==3 && (unsigned)(milliseconds()-last_query_ms)>=100) {
         pending=4; request_generation=schedule_generation;
         if (query_schedule()) respond(503,"{\"error\":\"mcu_unavailable\"}");

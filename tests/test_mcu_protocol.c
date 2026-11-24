@@ -13,6 +13,15 @@ int main(void) {
     assert(pf_encode_feed(10,frame)==0 && frame[9]==100);
     assert(pf_encode_schedule_query(frame)==7);
     assert(!memcmp(frame,(uint8_t[]){255,255,48,3,1,0,1},7));
+    unsigned wall_clock[]={2026,11,23,23,12,33};
+    assert(!pf_encode_clock(wall_clock,frame));
+    assert(!memcmp(frame,(uint8_t[]){255,255,6,6,66,11,23,23,12,33},10));
+    wall_clock[1]=2; wall_clock[2]=29;
+    assert(pf_encode_clock(wall_clock,frame));
+    wall_clock[0]=2028;
+    assert(!pf_encode_clock(wall_clock,frame));
+    wall_clock[0]=2100;
+    assert(pf_encode_clock(wall_clock,frame));
 
     struct pf_meal meals[]={{127,8,0,2,1},{62,19,30,1,0}};
     struct pf_meal decoded[PF_MAX_MEALS];

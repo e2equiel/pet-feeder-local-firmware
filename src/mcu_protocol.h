@@ -17,6 +17,7 @@ struct pf_meal {
 
 int pf_meal_valid(const struct pf_meal *meal);
 int pf_encode_feed(unsigned portions, uint8_t out[14]);
+int pf_encode_clock(const unsigned fields[6], uint8_t out[10]);
 size_t pf_encode_schedule_query(uint8_t out[7]);
 int pf_encode_schedule(const struct pf_meal *meals, size_t count,
                        uint8_t *out, size_t capacity, size_t *length);

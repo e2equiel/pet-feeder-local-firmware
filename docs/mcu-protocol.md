@@ -36,7 +36,11 @@ The application multiplies the requested portions by a fixed ten-gram value. Thi
 - Adding one disabled synthetic entry, reading the changed table, restoring the original table, and verifying exact readback, all while Internet routes were blocked.
 - Comparing one stock one-portion command against the reconstructed encoder.
 
-No additional motor commands were emitted by the new control API. Battery-backed operation and enabled scheduled meals remain unverified.
+One one-portion command was subsequently sent through the authenticated local API and acknowledged. Repeating its operation ID did not send another command. A scheduled-feeding record was also captured from the MCU with the entire camera application stopped for 25 seconds; the API manual-command counter did not increase. Physical delivery and battery-backed operation remain unverified.
+
+## MCU wall clock
+
+Stock function `0x14b394` emits command `06`, payload length six: `(full year + 0x58) modulo 256`, month, day, hour, minute, second. This encoding matched captured stock frames and the new API received an MCU acknowledgement when sending current local wall time. The month and day are one-based; there is no universal checksum on this frame. Acknowledgement is not independent clock readback.
 
 ## Required write guarantees
 

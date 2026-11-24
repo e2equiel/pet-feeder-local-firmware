@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include "local_api.h"
 /* The build host's glibc headers redirect sscanf to __isoc99_sscanf;
  * this device's uClibc exports the compatible function as sscanf. */
 extern int uclibc_sscanf(const char *,const char *,...) __asm__("sscanf");
@@ -74,6 +75,10 @@ static void process_request(struct channel *c, const char *request) {
     const char *field=strcasestr(request,"\nCSeq:");
     int sequence=0;
     if (field) sscanf(field+6,"%d",&sequence);
+    if (strcmp(method,"OPTIONS") && !pf_rtsp_authorized(request)) {
+        reply(c,sequence,"401 Unauthorized","WWW-Authenticate: Basic realm=\"pet-feeder-local\"\r\n",0);
+        return;
+    }
     if (!strcmp(method,"OPTIONS")) {
         reply(c,sequence,"200 OK","Public: OPTIONS, DESCRIBE, SETUP, PLAY, GET_PARAMETER, TEARDOWN\r\n",0);
     } else if (!strcmp(method,"DESCRIBE")) {
@@ -226,6 +231,7 @@ int ak_venc_encode_frame(unsigned handle,void *y,int third,void *uv,struct venc_
     }
     if (!real_encode) return -1;
     int result=real_encode(handle,y,third,uv,out);
+    if (handle==0) pf_api_tick();
     if (!result) process_frame(handle,out);
     return result;
 }

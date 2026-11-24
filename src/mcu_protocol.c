@@ -26,6 +26,20 @@ size_t pf_encode_schedule_query(uint8_t out[7]) {
     memcpy(out,frame,sizeof(frame)); return sizeof(frame);
 }
 
+int pf_encode_clock(const unsigned fields[6],uint8_t out[10]) {
+    if (!fields || !out || fields[0]<2000 || fields[0]>2099 ||
+        fields[1]<1 || fields[1]>12 || fields[2]<1 ||
+        fields[3]>23 || fields[4]>59 || fields[5]>59) return -1;
+    static const unsigned days[]={31,28,31,30,31,30,31,31,30,31,30,31};
+    unsigned maximum=days[fields[1]-1]+(fields[1]==2 && fields[0]%4==0);
+    if (fields[2]>maximum) return -1;
+    out[0]=out[1]=255; out[2]=6; out[3]=6;
+    /* Stock 0x14b394 stores (full year + 0x58) modulo 256. */
+    out[4]=(uint8_t)(fields[0]+0x58);
+    for (unsigned i=1;i<6;i++) out[4+i]=(uint8_t)fields[i];
+    return 0;
+}
+
 int pf_encode_schedule(const struct pf_meal *meals,size_t count,
                        uint8_t *out,size_t capacity,size_t *length) {
     if (!out || !length || count>PF_MAX_MEALS || (count && !meals)) return -1;

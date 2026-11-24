@@ -10,7 +10,7 @@ The stock application opens `/dev/ttySAK1`. Frames observed so far use `FF FF`, 
 
 - Query: `FF FF 30 03 01 00 01` (observed on hardware).
 - Query response payload: `01 <count> <rows> <checksum>` (observed on hardware).
-- Set payload: `10 <count> <rows> <checksum>` (inferred from the stock encoder; hardware write/readback validation pending).
+- Set payload: `10 <count> <rows> <checksum>` (verified by writing, querying, and restoring a disabled hardware fixture with Internet blocked).
 - Each row has five bytes: weekday mask, hour, minute, portions, enabled.
 - Weekday bits: Sunday bit 0 through Saturday bit 6.
 - Enabled: 0 disabled, 1 enabled. The stock DP207 parser converts character 8 of each 15-character row into this field.
@@ -27,7 +27,16 @@ The stock DP201 handler at `0x17e54` calls the encoder at `0x14b0a8`. It generat
 3A 09 03 0E 0B <grams-low> <grams-high> 00 00 00
 ```
 
-The application multiplies the requested portions by a fixed ten-gram value. This differs from short manual-feed frames documented for other feeder variants. Hardware comparison and a single bounded test are required before enabling this encoder in a control API.
+The application multiplies the requested portions by a fixed ten-gram value. This differs from short manual-feed frames documented for other feeder variants. A single one-portion stock command was captured on hardware and matched this encoder byte for byte. The MCU acknowledged command `01` with payload `00`. Further completion/status reports still require decoding; an acknowledgement does not prove that food was dispensed.
+
+## Hardware validation so far
+
+- Reading the original schedule table.
+- Writing the identical disabled table and verifying a fresh MCU readback.
+- Adding one disabled synthetic entry, reading the changed table, restoring the original table, and verifying exact readback, all while Internet routes were blocked.
+- Comparing one stock one-portion command against the reconstructed encoder.
+
+No additional motor commands were emitted by the new control API. Battery-backed operation and enabled scheduled meals remain unverified.
 
 ## Required write guarantees
 

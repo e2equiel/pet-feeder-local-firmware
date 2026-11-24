@@ -10,6 +10,7 @@ The goal is an authenticated local API, native RTSP video, and feeding schedules
 - Two complete 8 MiB flash reads matched byte for byte before experimentation.
 - A RAM-only preload prototype delivered native RTSP HEVC video at 1920×1080 and 10 fps. Direct playback and go2rtc restreaming both decoded without errors while outbound Internet routes were blocked.
 - The stock MCU returned its schedule table independently of Tuya cloud access.
+- A disabled schedule entry was added, read back, and removed through the MCU protocol with Internet blocked. The original table was restored and verified exactly.
 - The stock Tuya LAN interface did not reliably recover after starting without Internet. The new control API will therefore address the MCU directly rather than depend on Tuya LAN or tuya-local.
 - No replacement firmware has been flashed. The test device was restored to its original executable and network routing after the initial experiments.
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## Installer 0.2.2
+
+- Replace the Mac Python bundle with a native Swift / SwiftUI app, requiring macOS 13+ and only Apple-provided runtime libraries.
+- Add the original installer icon, a native review/confirmation screen, backup-folder picker, private token copy and a disconnected preview mode.
+- Port exact-profile validation, double full backups, checked uploads, activation recovery and unchanged-schedule verification to Swift; cover the boundaries with native tests.
+- Preserve the existing Windows/Linux and source installer. Firmware remains 0.2.0. No trusted Apple signing/notarization is claimed.
+- Keep native on-device upgrade/restore validation explicitly pending; the existing Python installer's hardware validation does not establish the Swift port's behavior.
+
 ## Installer 0.2.1
 
 - Package macOS as a double-clickable `.app` instead of a loose executable and Python directory.

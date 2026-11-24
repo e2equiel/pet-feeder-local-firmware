@@ -33,3 +33,9 @@ A user downloaded the 0.2.0 macOS ZIP through a browser and macOS blocked Python
 The source installer adds a double-clickable launcher for an existing trusted Python. The extracted macOS ARM64 app passed deep/strict signature integrity verification, disconnected startup, embedded-asset loading and clean shutdown. The source ZIP's launcher was checked with an existing Homebrew Python. The installer suite passes 27 tests, including startup with DNS unavailable and authenticated close behavior. The notarization operator rejects the ad-hoc build before an upload; its Apple submission path remains untested.
 
 The installed firmware remains 0.2.0 and is not changed by these packaging updates. No further device or physical feeding experiment is needed or performed for this update.
+
+## Native Mac installer (0.2.2)
+
+The Swift port has 20 disconnected boundary tests covering private-address input, bundle integrity/path restrictions, unsupported profiles and foreign hooks, binary transfer limits, two matching full private backups, checked upload replacement, recovery ordering, failed activation, schedule mismatch rollback, existing token preservation, bounded HTTP parsing with no redirects, console length and split Telnet negotiation. The macOS package check extracts the ZIP, verifies its seal, checks for system-only dependencies and validates the embedded module and original app icon. A disconnected native window was checked through its connection/review screens; installation is disabled in that preview.
+
+**Native on-device upgrade and restore remain unverified.** Hardware verification is pending access to the test device's LAN. Prior Python installer hardware evidence is not proof of the Swift port's complete behavior. No native install, restore, feeding or schedule write was performed. The 0.2.0 firmware payload is unchanged. This release remains an experimental preview, not a new physical-feeding or battery validation.

@@ -8,7 +8,6 @@ import json
 import os
 import plistlib
 import re
-import stat
 import subprocess
 import sys
 import tempfile
@@ -22,14 +21,20 @@ archive_path = ROOT / "dist" / portable_name()
 with tempfile.TemporaryDirectory(prefix="pet-feeder-package-") as temporary:
     folder = Path(temporary)
     if sys.platform == "darwin":
-        with zipfile.ZipFile(archive_path) as archive:
-            assert any(stat.S_ISLNK(info.external_attr >> 16) for info in archive.infolist()), "macOS symlinks were lost"
         subprocess.run(["ditto", "-x", "-k", str(archive_path), str(folder)], check=True)
         app = folder / "PetFeederLocalInstaller.app"
         info = plistlib.loads((app / "Contents/Info.plist").read_bytes())
-        assert info["LSUIElement"] is True
+        assert info["PFLNativeInstaller"] is True
+        assert info["CFBundleIconFile"] == "AppIcon"
         subprocess.run(["codesign", "--verify", "--deep", "--strict", "--verbose=2", str(app)], check=True)
         exe = app / "Contents/MacOS/PetFeederLocalInstaller"
+        assert not list(app.rglob("*.dylib")) and not list(app.rglob("Python.framework"))
+        assert not list(app.rglob("_internal")), "A Python runtime was packaged"
+        libraries = subprocess.check_output(["otool", "-L", str(exe)], text=True).splitlines()[1:]
+        assert libraries and all(line.strip().startswith(("/System/Library/", "/usr/lib/")) for line in libraries)
+        subprocess.run([str(exe), "--verify-bundle"], check=True, timeout=15)
+        print("Extracted native macOS ZIP: integrity, bundled firmware/icon and system-only runtime verified")
+        sys.exit(0)
     else:
         with zipfile.ZipFile(archive_path) as archive:
             archive.extractall(folder)

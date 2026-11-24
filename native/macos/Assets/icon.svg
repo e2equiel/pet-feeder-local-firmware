@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1f786d"/><stop offset="1" stop-color="#123d45"/></linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#cce8dc"/></linearGradient>
+    <linearGradient id="bowl" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#8fe1bd"/><stop offset="1" stop-color="#45ac88"/></linearGradient>
+  </defs>
+  <!-- Native app tile and a simplified feeder; the small arrow denotes setup. -->
+  <rect x="64" y="64" width="896" height="896" rx="218" fill="url(#tile)"/>
+  <path d="M226 219c0-46 37-83 83-83h406c46 0 83 37 83 83v439c0 46-37 83-83 83H309c-46 0-83-37-83-83z" fill="#0b3c3d" opacity=".24"/>
+  <path d="M222 211c0-47 38-85 85-85h410c47 0 85 38 85 85v428c0 47-38 85-85 85H307c-47 0-85-38-85-85z" fill="url(#body)"/>
+  <path d="M263 236c0-40 32-72 72-72h354c40 0 72 32 72 72v47H263z" fill="#b9dfd1"/>
+  <path d="M295 205h434" stroke="#f7fffb" stroke-width="16" stroke-linecap="round" opacity=".85"/>
+  <circle cx="512" cy="390" r="99" fill="#24655b"/>
+  <circle cx="512" cy="390" r="70" fill="#123e40"/>
+  <circle cx="535" cy="366" r="18" fill="#8de1bf"/>
+  <path d="M425 588h174a24 24 0 0 1 24 24v61H401v-61a24 24 0 0 1 24-24z" fill="#174b48"/>
+  <path d="M192 700h640l-46 132a71 71 0 0 1-67 48H305a71 71 0 0 1-67-48z" fill="url(#bowl)"/>
+  <path d="M184 701h656" stroke="#edfff5" stroke-width="32" stroke-linecap="round"/>
+  <path d="M324 823h376" stroke="#d0f8df" stroke-width="13" stroke-linecap="round" opacity=".5"/>
+  <circle cx="763" cy="735" r="119" fill="#113f41"/>
+  <circle cx="763" cy="735" r="101" fill="#f8bd68"/>
+  <path d="M763 679v93m-39-38 39 39 39-39" fill="none" stroke="#173f3d" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

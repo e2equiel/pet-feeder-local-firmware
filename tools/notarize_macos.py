@@ -45,7 +45,12 @@ def notarize(app: Path, profile: str, output: Path) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", required=True, help="Existing notarytool keychain profile name")
-    parser.add_argument("--app", type=Path, default=ROOT / "dist/PetFeederLocalInstaller.app")
+    parser.add_argument("--app", type=Path, help="Optional app to submit; by default extract the current ZIP into a temporary build directory")
     parser.add_argument("--output", type=Path, default=ROOT / "dist" / portable_name())
     args = parser.parse_args()
-    notarize(args.app.resolve(), args.profile, args.output.resolve())
+    if args.app:
+        notarize(args.app.resolve(), args.profile, args.output.resolve())
+    else:
+        with tempfile.TemporaryDirectory(prefix="pet-feeder-signing-") as temporary:
+            subprocess.run(["ditto", "-x", "-k", str(ROOT / "dist" / portable_name()), temporary], check=True)
+            notarize(Path(temporary) / "PetFeederLocalInstaller.app", args.profile, args.output.resolve())

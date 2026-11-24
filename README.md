@@ -1,8 +1,10 @@
 # Pet Feeder Local Firmware
 
-**macOS packaging update:** the old 0.2.0 portable ZIP can be blocked repeatedly for its individual Python libraries. Use the current source installer with a trusted Python installation, or the 0.2.1 `.app` package. The `.app` is currently **not Developer ID signed or notarized**, so macOS may still block it. See [macOS setup](#macos-setup) and [signing status](docs/macos-signing.md).
+<img src="native/macos/Assets/icon.png" width="96" alt="Pet Feeder Local installer icon">
 
-Installer **0.2.1** still contains firmware overlay **0.2.0**. This is an installer/UI update; an already working feeder does not need its firmware reinstalled.
+**Native Mac installer:** version 0.2.2 is a Swift / SwiftUI app for macOS 13 or later. It needs **no Python, browser or third-party runtime**. It is currently **not Developer ID signed or notarized**, so Gatekeeper may still block the app itself. See [macOS setup](#macos-setup) and [signing status](docs/macos-signing.md).
+
+Installer **0.2.2** still contains firmware overlay **0.2.0**. This is an installer/UI update; an already working feeder does not need its firmware reinstalled.
 
 Give a supported camera feeder local controls, an editable onboard feeding schedule and an authenticated RTSP camera. Pair Wi-Fi once with Tuya or Smart Life, run the installer, then use [Pet Feeder Local for Home Assistant](https://github.com/e2equiel/ha-pet-feeder-local). No Tuya developer account, cloud key or tuya-local integration is required for local operation.
 
@@ -31,15 +33,15 @@ A similar-looking feeder is not necessarily compatible. The installer checks the
 You need a computer on the same LAN, the feeder's power adapter, and permission to modify this feeder. A microSD card, soldering and Tuya developer credentials are not needed for this supported profile.
 
 1. **Connect Wi-Fi once.** Set up the feeder normally with Tuya or Smart Life and confirm it joins your Wi-Fi. Find its private IPv4 address in your router's connected-device list or the app's device information. A DHCP reservation in the router keeps the address stable. Direct installation on a factory-fresh, unpaired feeder has **not** been validated.
-2. **Download the complete installer ZIP** from [Releases](https://github.com/e2equiel/pet-feeder-local-firmware/releases). Choose your operating system and CPU and extract it. On macOS, open **PetFeederLocalInstaller.app** with a double-click; Finder may hide the `.app` suffix. On Windows, run `PetFeederLocalInstaller.exe`; on Linux, run `PetFeederLocalInstaller`. A local browser wizard opens. Keep it running until verification finishes, then use **Close installer**. For macOS blocks or a missing portable build, use the source installer below.
+2. **Download the complete installer ZIP** from [Releases](https://github.com/e2equiel/pet-feeder-local-firmware/releases). Choose your operating system and CPU and extract it. On macOS, open **PetFeederLocalInstaller.app** with a double-click; Finder may hide the `.app` suffix. It opens a native window. On Windows, run `PetFeederLocalInstaller.exe`; on Linux, run `PetFeederLocalInstaller`; these open the local browser wizard. Keep the installer running until verification finishes, then use **Close installer**. The source installer below remains an alternative.
 3. **Check, review and install.** Enter this feeder's IP address. The published factory root password is prefilled. Click **Check compatibility**, review the detected profile, confirm the selected device, and click **Back up and install**. No device is scanned or selected automatically. Leave the feeder powered on throughout the backup and verification.
 4. **Connect Home Assistant.** The completion page shows the local API address and a private token. Use its Marketplace and Add integration buttons, following the [companion quick start](https://github.com/e2equiel/ha-pet-feeder-local#installation). Add the bundled dashboard card through the visual card picker.
 
 | Your computer | Portable ZIP suffix |
 | --- | --- |
 | Windows on Intel/AMD | `windows-x86_64.zip` |
-| Mac with Apple silicon | `macos-arm64.zip` |
-| Mac with Intel CPU | `macos-x86_64.zip` |
+| Mac with Apple silicon, macOS 13+ | `macos-arm64.zip` — native Swift app |
+| Mac with Intel CPU, macOS 13+ | `macos-x86_64.zip` — native Swift app |
 | Linux on Intel/AMD 64-bit | `linux-x86_64.zip` (built on Ubuntu 24.04) |
 | Other supported Python computer | `source-installer.zip` |
 
@@ -49,9 +51,11 @@ Do not press **Remove device**, factory reset, or change Wi-Fi in the Tuya app d
 
 ### macOS setup
 
-The portable download contains a normal **PetFeederLocalInstaller.app**. Keep the app intact and double-click it; there is no Terminal command to find inside the bundle. It opens its interface in your default browser and runs in the background. Use **Close installer** in the browser when finished.
+The download contains **PetFeederLocalInstaller.app**, a native Swift / SwiftUI application. Keep it intact and double-click it; no Terminal, Python installation or browser is needed. Its Dock icon and window belong to the installer. Use **Close installer** or Quit when finished; closing is refused while an operation is active. Use the app menu's **Preview without a device** to explore with disconnected sample data.
 
-The app bundle is currently sealed with an ad-hoc signature for package integrity, **not** a trusted Developer ID signature. Apple notarization is pending. Packaging it as an app fixes the loose runtime layout, but does not guarantee Gatekeeper acceptance. Do not approve individual Python libraries one by one or disable Gatekeeper. If macOS blocks it, the source installer below uses an already installed, trusted Python instead of distributing a second Python runtime.
+The app is sealed with an ad-hoc signature for integrity, **not** a trusted Developer ID signature. Apple notarization remains pending. Removing Python eliminates the separate Python-library approvals, but does not guarantee Gatekeeper acceptance: macOS may still block this app as an unidentified developer. Local-network access and permission to save backups are separate macOS privacy controls. Do not disable Gatekeeper or approve each old Python library. The old 0.2.0/0.2.1 Mac Python bundles are superseded.
+
+The Swift implementation has dedicated boundary tests and extracted-package verification. Its actual on-device upgrade/restore path has not yet been revalidated independently of the existing Python installer; see [validation](docs/validation.md). The firmware payload is unchanged.
 
 ### Source installer fallback
 
@@ -100,6 +104,9 @@ docker run --rm --platform linux/amd64 -v "$PWD:/src" -w /src pet-feeder-local-t
 python3 tools/check_imports.py build/pf_local.so --allowed tools/target-imports.txt
 python3 -m unittest discover -s installer/tests -v
 python3 tools/build_release.py    # Validated bundle and complete source-installer ZIP
+# macOS only, after the bundle is built; no Python runtime is packaged.
+sh tools/test_macos_native.sh
+sh tools/build_macos_native.sh
 ```
 
 The release build uses the pinned Debian 12 GNU ARM toolchain and pyelftools for the ABI check. Native cross-compilation with a newer distribution can silently introduce time64/fortified libc imports absent from this feeder; the import gate rejects those builds. The public import allowlist contains symbol names verified against the target libc, not a vendor library. The ELF must include both SysV and GNU symbol hashes. `tools/check_imports.py` can compare imports against your own privately extracted target libc (requires pyelftools); installation also checks eager loading on the actual device before activation. CI tests the C codecs, JSON parser, durable feeding journal, installer boundaries and UI request protections, then packages portable installers. Builds run on pushes and releases, with no scheduled workflow.

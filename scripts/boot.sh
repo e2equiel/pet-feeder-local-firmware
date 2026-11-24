@@ -18,7 +18,7 @@ cat > "$runtime/launcher" <<'PF_LAUNCHER'
 #!/bin/sh
 export PF_STATE_DIR=/mnt/config/pet-feeder-local
 export LD_PRELOAD=/mnt/config/pet-feeder-local/pf_local.so
-exec /run/pet-feeder-local/ak_tuya_ipc > /run/pet-feeder-local/app.log 2>&1
+exec /run/pet-feeder-local/ak_tuya_ipc > /dev/null 2>&1
 PF_LAUNCHER
 chmod 700 "$runtime/launcher"
 # More specific than a DHCP-installed default route; the connected LAN wins.

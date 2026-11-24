@@ -22,3 +22,5 @@ Clock fields are wall time in the household's configured timezone, not UTC epoch
 RTSP uses TCP interleaving and HEVC: main video is port 8555, substream is port 8556. The username is `feeder`; the password is the same private token. Authentication is Basic over the LAN. Audio is not implemented. Each stream accepts one consumer; use go2rtc to share it with Home Assistant and Frigate. Main video has been validated; the substream still needs separate validation.
 
 Build with `make test` and `make rtsp` using an ARMv5TE GNU cross compiler. The preload must have both SysV and GNU hash tables. Before loading it, run `tools/check_imports.py` against a privately extracted original libc and perform an eager-loader check on the device. Vendor libraries are not distributed in this repository.
+
+The persistent launcher discards vendor application output instead of accumulating an unbounded RAM log while the cloud SDK retries offline connections. The small boot-validation log stays in RAM. `scripts/uninstall.sh` disables this overlay and its boot hook, restores the original executable path and routing, and retains the private token/journal for recovery.

@@ -55,7 +55,9 @@ The download contains **PetFeederLocalInstaller.app**, a native Swift / SwiftUI 
 
 The app is sealed with an ad-hoc signature for integrity, **not** a trusted Developer ID signature. Apple notarization remains pending. Removing Python eliminates the separate Python-library approvals, but does not guarantee Gatekeeper acceptance: macOS may still block this app as an unidentified developer. Local-network access and permission to save backups are separate macOS privacy controls. Do not disable Gatekeeper or approve each old Python library. The old 0.2.0/0.2.1 Mac Python bundles are superseded.
 
-The Swift implementation has dedicated boundary tests and extracted-package verification. A native upgrade and a controlled activation-verification failure with real rollback passed on the supported test unit, preserving its token, meals and operation journal. Native first installation on untouched stock firmware and the native stock-restore action still need separate hardware validation. See [validation](docs/validation.md). The firmware payload is unchanged.
+The Swift implementation has dedicated boundary tests and extracted-package verification. The published 0.2.2 Mac app passed a native upgrade, **Restore stock operation**, and **First installation** after restoring the original application. A controlled activation-verification failure also exercised real rollback. The three saved meals, operation journal and original immutable flash were preserved. The restored unit already had Wi-Fi configured; factory-reset and unboxed onboarding remain untested. See [validation](docs/validation.md). The firmware payload is unchanged.
+
+If the Mac app cannot connect even though Local Network access is already allowed, close it and reopen the same copy before checking compatibility again. After stock restoration, let the feeder reconnect and settle before reinstalling. Read [recovery](docs/recovery.md) if the two backup reads differ; installation refuses to proceed until they match.
 
 ### Source installer fallback
 

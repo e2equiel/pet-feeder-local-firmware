@@ -4,9 +4,13 @@
 
 Check the IP address in your router and confirm that only the intended feeder is selected. Your computer and feeder must be on reachable LAN segments; guest Wi-Fi may isolate clients. The supported profile must already be paired to Wi-Fi. Telnet port 23 must be available with the supported factory root access. Incorrect credentials, unknown stock fingerprints, different partition layouts and another project's boot hook cause a refusal before installation. Do not force a check or erase another project's files.
 
+On macOS, check **System Settings > Privacy & Security > Local Network** if the app cannot connect. If access is already allowed, close the installer and reopen the same app before checking compatibility again. That resolved an initial connection failure with the downloaded 0.2.2 app during hardware testing; no permission or security setting was changed. Keep one installer copy for normal use: [Apple documents identity-tracking issues with ad-hoc signatures and multiple app versions](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy).
+
 ## Backup fails or the two reads differ
 
 Nothing is activated until both complete 8 MiB reads match. Let the feeder become idle, check Wi-Fi and free disk space on the computer, then rerun the wizard. Keep every completed backup private. Background flash writes can make two reads differ; that is a reason to retry the backup, not to skip verification. A full backup and configuration archive contain secrets.
+
+After restoring stock operation, allow the original app time to reconnect and finish updating its configuration before installing again. In the stock-restoration test, the first attempt stopped because only the configuration partition changed between reads; both copies of the immutable partitions still matched the original baseline. The mismatch was not bypassed. After the configuration settled, a normal retry produced two complete matching backups and installation finished. Full flash transfers over Telnet take several minutes; keep power on and let the current stage finish.
 
 ## Installation cannot verify the new API
 
@@ -19,6 +23,8 @@ If Wi-Fi or Telnet is entirely unavailable, software rollback over the network i
 ## Lost token
 
 Find `home-assistant-setup.json` in the private backup folder on the installation computer. An upgrade preserves the existing token. Advanced owners can read `/mnt/config/pet-feeder-local/api.token` through their own root session. Never paste that file into a public issue. Use the integration's Reconfigure or reauthentication flow to update HA after an intentional token change.
+
+A first installation after stock restoration creates a new token. Use the new setup file to reconfigure the existing HA integration and update the feeder's authenticated RTSP source in go2rtc or Frigate. Existing consumers with the old token will not reconnect automatically.
 
 ## Change Wi-Fi or go back to Tuya
 

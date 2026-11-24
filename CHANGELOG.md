@@ -9,7 +9,8 @@
 - Retain the native backup-folder dialog until completion and update the selected destination on the main queue.
 - Preserve the existing Windows/Linux and source installer. Firmware remains 0.2.0. No trusted Apple signing/notarization is claimed.
 - Verify a native GUI upgrade and real rollback after an intentionally failed activation check on the supported unit; preserve its token, meals, journal and immutable flash hash, with local video recovered.
-- Keep native first installation on untouched stock firmware and native stock restoration explicitly pending separate hardware validation.
+- Validate the published native app's stock restoration and first-install path on the previously paired test unit, including matching stock backups, fresh API credentials, unchanged meals/journal and original immutable flash. Factory-reset and unboxed onboarding remain untested.
+- Document stock configuration changes causing a safe backup refusal, retry after the device settles, token changes after reinstalling, and reopening the Mac app when initial Local Network access has not taken effect.
 
 ## Installer 0.2.1
 

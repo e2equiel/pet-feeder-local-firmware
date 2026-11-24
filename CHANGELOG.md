@@ -1,5 +1,13 @@
 # Changelog
 
+## Installer 0.3.0
+
+- Redesign the native Mac app and portable wizard with the original icon, a three-step layout, neutral surfaces and adaptive light/dark colors.
+- Clarify single-device checks, private backups, installation confirmation and Home Assistant setup; add visible keyboard focus and responsive portable layouts.
+- Keep portable demo installation disabled, require confirmation for stock restoration, and show a dedicated restored state.
+- Keep the native app free of Python and third-party runtimes. Firmware overlay remains 0.2.0; no working device needs reinstalling.
+- Validate the redesign with disconnected fixtures and existing installer boundary tests. This release adds no hardware, feeding, battery or power-loss claim.
+
 ## Installer 0.2.2
 
 - Replace the Mac Python bundle with a native Swift / SwiftUI app, requiring macOS 13+ and only Apple-provided runtime libraries.

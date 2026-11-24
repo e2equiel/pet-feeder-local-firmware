@@ -58,7 +58,7 @@ with tempfile.TemporaryDirectory(prefix="pet-feeder-package-") as temporary:
                     opener = build_opener(ProxyHandler({}))
                     with opener.open(url, timeout=5) as response:
                         page = response.read().decode()
-                    assert "Your feeder. Your network." in page and "Disconnected demo" in page
+                    assert "Connect a feeder" in page and "Disconnected demo" in page
                     assert "Close installer" in page
                     csrf = re.search(r"const csrf='([^']+)'", page).group(1)
                     request = Request(url + "quit", data=b"{}", headers={

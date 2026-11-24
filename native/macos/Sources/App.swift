@@ -1,8 +1,6 @@
 import AppKit
 import SwiftUI
 
-private let accent = Color(red: 31/255, green: 120/255, blue: 109/255)
-private let ink = Color(red: 18/255, green: 61/255, blue: 69/255)
 private let installerVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "development"
 
 final class InstallerModel: ObservableObject {
@@ -145,120 +143,200 @@ final class InstallerModel: ObservableObject {
 
 struct InstallerView: View {
     @ObservedObject var model: InstallerModel
+    @Environment(\.colorScheme) private var colorScheme
     private var step: Int { model.stage == .connect ? 0 : model.stage == .review ? 1 : 2 }
+    private var accent: Color { colorScheme == .dark ? Color(red: 0.46, green: 0.79, blue: 0.72) : Color(red: 31/255, green: 120/255, blue: 109/255) }
+    private var muted: Color { colorScheme == .dark ? Color(red: 0.69, green: 0.73, blue: 0.70) : Color(red: 0.38, green: 0.41, blue: 0.39) }
+    private var onAccent: Color { colorScheme == .dark ? Color(red: 0.06, green: 0.14, blue: 0.12) : .white }
+    private var line: Color { Color(nsColor: .separatorColor).opacity(0.65) }
+    private var pageTitle: String {
+        if model.stage == .connect { return "Connect a feeder" }
+        if model.stage == .review { return "Review your installation" }
+        return model.result == nil ? "Original operation restored" : "Connect Home Assistant"
+    }
+    private var pageDescription: String {
+        if model.stage == .connect { return "Start with one feeder on your Wi-Fi. We check its exact firmware before making changes." }
+        if model.stage == .review { return "Confirm the selected feeder and choose where to keep its private backups." }
+        return model.result == nil ? "The original application and network routing are back in place." : "Local control is installed. Use these private details to finish setup."
+    }
 
     var body: some View {
         HStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 24) {
-                Image(nsImage: NSApplication.shared.applicationIconImage).resizable().frame(width: 78, height: 78)
-                    .accessibilityLabel("Pet Feeder Local installer")
-                VStack(alignment: .leading, spacing: 7) {
-                    Text("Pet Feeder\nLocal").font(.system(size: 30, weight: .bold, design: .rounded)).foregroundColor(ink)
-                    Text("Your feeder.\nYour network.").font(.system(size: 15)).foregroundColor(.secondary).lineSpacing(3)
-                }
-                VStack(alignment: .leading, spacing: 18) {
-                    stepLabel(0, "Connect", "Choose one feeder")
-                    stepLabel(1, "Review & install", "Verified private backups")
-                    stepLabel(2, "Connect Home Assistant", "Local controls and camera")
-                }.padding(.top, 16)
-                Spacer()
-                if model.demo { Label("Disconnected preview", systemImage: "eye").font(.caption).foregroundColor(accent) }
-                Text("Installer \(installerVersion)\nFirmware overlay 0.2.0").font(.caption).foregroundColor(.secondary).lineSpacing(4)
-            }.padding(28).frame(width: 245).background(Color(red: 238/255, green: 246/255, blue: 242/255))
-            VStack(alignment: .leading, spacing: 18) {
+            sidebar
+            Rectangle().fill(line).frame(width: 1)
+            VStack(alignment: .leading, spacing: 0) {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 24) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Step \(step + 1) of 3").font(.system(size: 12)).foregroundColor(muted)
+                            Text(pageTitle).font(.system(size: 28, weight: .medium)).foregroundColor(.primary)
+                            Text(pageDescription).font(.system(size: 14)).foregroundColor(muted).fixedSize(horizontal: false, vertical: true)
+                        }
                         if model.stage == .connect { connection }
                         else if model.stage == .review { review }
                         else { completion }
                         if let error = model.error {
-                            Label(error, systemImage: "exclamationmark.triangle.fill")
-                                .font(.callout).foregroundColor(.red).padding(14)
-                                .frame(maxWidth: .infinity, alignment: .leading).background(Color.red.opacity(0.06)).cornerRadius(10)
+                            Label(error, systemImage: "exclamationmark.triangle")
+                                .font(.system(size: 13)).foregroundColor(.red).padding(16)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color.red.opacity(0.06)).cornerRadius(12)
                         }
-                    }.padding(.trailing, 4)
+                    }.frame(maxWidth: 600, alignment: .leading).padding(32).frame(maxWidth: .infinity, alignment: .leading)
                 }
-                Divider()
-                HStack(alignment: .top, spacing: 10) {
-                    if model.busy { ProgressView().controlSize(.small) }
-                    else { Image(systemName: model.error == nil ? "checkmark.circle" : "exclamationmark.circle").foregroundColor(accent) }
-                    Text(model.message).font(.callout).foregroundColor(.secondary).frame(maxWidth: .infinity, alignment: .leading)
-                }.accessibilityElement(children: .combine)
-                HStack {
-                    Text("Backups and credentials stay on this Mac.").font(.caption).foregroundColor(.secondary)
-                    Spacer()
-                    Button("Close installer") { NSApplication.shared.terminate(nil) }.disabled(model.busy)
-                }
-            }.padding(30).frame(maxWidth: .infinity)
-        }.frame(minWidth: 880, minHeight: 670).background(Color(NSColor.windowBackgroundColor)).accentColor(accent)
+                footer
+            }.frame(maxWidth: .infinity)
+        }.frame(minWidth: 900, minHeight: 680)
+            .background(Color(nsColor: .windowBackgroundColor)).accentColor(accent)
             .alert("Restore stock operation?", isPresented: $model.confirmRestore) {
                 Button("Cancel", role: .cancel) {}
                 Button("Restore", role: .destructive) { model.restore() }
             } message: { Text("This restores only the selected feeder's original application and Internet routing. Its MCU meal table is preserved.") }
     }
 
-    private func stepLabel(_ index: Int, _ title: String, _ subtitle: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: step > index ? "checkmark.circle.fill" : "\(index + 1).circle.fill")
-                .font(.title3).foregroundColor(step >= index ? accent : .gray.opacity(0.5))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(.system(size: 13, weight: .semibold)).foregroundColor(step >= index ? ink : .secondary)
-                Text(subtitle).font(.caption).foregroundColor(.secondary)
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 32) {
+            HStack(spacing: 12) {
+                Image(nsImage: NSApplication.shared.applicationIconImage).resizable().frame(width: 56, height: 56)
+                    .accessibilityLabel("Pet Feeder Local installer")
+                Text("Pet Feeder\nLocal").font(.system(size: 22, weight: .semibold)).lineSpacing(1)
             }
-        }
+            Text("Local control for your feeder").font(.system(size: 13)).foregroundColor(muted)
+            VStack(alignment: .leading, spacing: 8) {
+                stepLabel(0, "Connect", "Check one feeder")
+                stepLabel(1, "Review & install", "Back up before installing")
+                stepLabel(2, "Home Assistant", "Finish local setup")
+            }
+            Spacer(minLength: 24)
+            VStack(alignment: .leading, spacing: 12) {
+                if model.demo {
+                    Label("Disconnected preview", systemImage: "eye").font(.system(size: 12)).foregroundColor(accent)
+                }
+                Text("Installer \(installerVersion)\nFirmware overlay 0.2.0")
+                    .font(.system(size: 12)).foregroundColor(muted).lineSpacing(4)
+            }
+        }.padding(24).frame(width: 240).background(Color(nsColor: .controlBackgroundColor))
+    }
+
+    private func stepLabel(_ index: Int, _ title: String, _ subtitle: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: step > index ? "checkmark.circle.fill" : "\(index + 1).circle")
+                .font(.system(size: 18, weight: .regular)).frame(width: 20)
+                .foregroundColor(step >= index ? accent : muted)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.system(size: 13, weight: .medium)).foregroundColor(step == index ? .primary : muted)
+                Text(subtitle).font(.system(size: 12)).foregroundColor(muted).fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
+            .background(step == index ? accent.opacity(0.08) : .clear).cornerRadius(12)
+    }
+
+    private var footer: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 8) {
+                if model.busy { ProgressView().controlSize(.small) }
+                else {
+                    Image(systemName: model.error != nil ? "exclamationmark.circle" : model.stage == .complete ? "checkmark.circle" : "info.circle")
+                        .foregroundColor(model.error != nil ? .red : muted)
+                }
+                Text(model.message).font(.system(size: 13)).foregroundColor(muted).fixedSize(horizontal: false, vertical: true)
+            }.accessibilityElement(children: .combine)
+            HStack(spacing: 16) {
+                Text("Backups and credentials stay on this Mac").font(.system(size: 12)).foregroundColor(muted)
+                Spacer()
+                Button("Close installer") { NSApplication.shared.terminate(nil) }.disabled(model.busy).controlSize(.large)
+            }
+        }.padding(24).background(Color(nsColor: .controlBackgroundColor))
+            .overlay(alignment: .top) { Rectangle().fill(line).frame(height: 1) }
+    }
+
+    private func panel<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 20, content: content).padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(nsColor: .controlBackgroundColor)).cornerRadius(16)
+            .overlay { RoundedRectangle(cornerRadius: 16).stroke(line, lineWidth: 1) }
+    }
+
+    private func primaryAction(_ title: String, image: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: image).font(.system(size: 13, weight: .medium))
+                .padding(.horizontal, 16).frame(minHeight: 40)
+                .foregroundColor(onAccent).background(accent).cornerRadius(8)
+        }.buttonStyle(.plain)
     }
 
     private var connection: some View {
-        VStack(alignment: .leading, spacing: 19) {
-            Text("Make it local.").font(.system(size: 31, weight: .bold, design: .rounded))
-            Text("Check your feeder before making any changes. Only the address you enter will be contacted.")
-                .font(.callout).foregroundColor(.secondary)
-            Label("V330L-DU4L-VS · Original firmware 68.00.09", systemImage: "checkmark.shield")
-                .font(.callout).foregroundColor(accent).padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                .background(accent.opacity(0.07)).cornerRadius(10)
-            VStack(alignment: .leading, spacing: 7) {
-                Text("Feeder IP address").font(.headline)
-                TextField("192.168.1.123", text: $model.address).textFieldStyle(.roundedBorder)
-                    .accessibilityIdentifier("feeder-address")
-                Text("Find this in your router or the feeder's Tuya / Smart Life device information.").font(.caption).foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: 24) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "shippingbox").font(.system(size: 18)).foregroundColor(muted).frame(width: 20)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Supported model").font(.system(size: 12)).foregroundColor(muted)
+                    Text("V330L-DU4L-VS · Original firmware 68.00.09").font(.system(size: 13, weight: .medium))
+                }
             }
-            VStack(alignment: .leading, spacing: 7) {
-                Text("Device root password").font(.headline)
-                SecureField("Root password", text: $model.password).textFieldStyle(.roundedBorder)
-                Text("The known factory password is prefilled. This is not your Tuya account password.").font(.caption).foregroundColor(.secondary)
+            panel {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Feeder IP address").font(.system(size: 13, weight: .medium))
+                    TextField("192.168.1.123", text: $model.address).textFieldStyle(.roundedBorder).controlSize(.large)
+                        .accessibilityIdentifier("feeder-address")
+                    Text("Find it in your router or the feeder's Tuya / Smart Life device information.")
+                        .font(.system(size: 12)).foregroundColor(muted)
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Device root password").font(.system(size: 13, weight: .medium))
+                    SecureField("Root password", text: $model.password).textFieldStyle(.roundedBorder).controlSize(.large)
+                    Text("The known factory password is prefilled. This is not your Tuya account password.")
+                        .font(.system(size: 12)).foregroundColor(muted)
+                }
+                Divider()
+                Label("Keep the power adapter connected and Wi-Fi configured. No Tuya developer account, microSD card or soldering is needed for this supported firmware.", systemImage: "powerplug")
+                    .font(.system(size: 13)).foregroundColor(muted).fixedSize(horizontal: false, vertical: true)
+                primaryAction("Check compatibility", image: "arrow.right", action: model.check).disabled(model.address.isEmpty)
             }
-            Text("Keep the feeder on its power adapter. Wi-Fi must already be configured. No Tuya developer account, microSD card or soldering is needed for this supported version.")
-                .font(.callout).foregroundColor(.secondary)
-            Button(action: model.check) { Label("Check compatibility", systemImage: "arrow.right").padding(.vertical, 4) }
-                .buttonStyle(.borderedProminent).disabled(model.address.isEmpty)
+            Text("Checking is read-only. Only the address you enter will be contacted.").font(.system(size: 12)).foregroundColor(muted)
         }.disabled(model.busy)
     }
 
     private var review: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text("Ready for your review.").font(.system(size: 29, weight: .bold, design: .rounded))
-            Text("\(model.address) · V330L-DU4L-VS").font(.headline).textSelection(.enabled)
-            HStack(spacing: 28) {
-                detail("Original firmware", "68.00.09")
-                detail("Overlay", model.details?.version ?? "0.2.0")
-                detail("Operation", model.details?.upgrade == true ? "Upgrade" : "First installation")
-            }.padding(14).frame(maxWidth: .infinity, alignment: .leading).background(accent.opacity(0.06)).cornerRadius(10)
-            Text("Two matching full backups come first. Then the installer verifies and activates a reversible overlay. It does not write raw flash, send a feeding command or replace the saved meal table.")
-                .font(.callout).foregroundColor(.secondary)
-            VStack(alignment: .leading, spacing: 7) {
-                Text("Private backup folder").font(.headline)
-                Text(model.demo ? "~/Documents/PetFeederLocalBackups" : model.backups.path).font(.caption).foregroundColor(.secondary).lineLimit(2).textSelection(.enabled)
-                Button("Choose folder…", action: model.chooseBackups).disabled(model.demo)
+        VStack(alignment: .leading, spacing: 24) {
+            panel {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "checkmark.shield").font(.system(size: 20)).foregroundColor(accent)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Exact firmware verified").font(.system(size: 15, weight: .medium))
+                        Text("\(model.address) · V330L-DU4L-VS").font(.system(size: 13)).foregroundColor(muted).textSelection(.enabled)
+                    }
+                }
+                Divider()
+                HStack(alignment: .top, spacing: 24) {
+                    detail("Original firmware", "68.00.09")
+                    detail("Overlay", model.details?.version ?? "0.2.0")
+                    detail("Operation", model.details?.upgrade == true ? "Upgrade" : "First installation")
+                }
+            }
+            panel {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Private backups").font(.system(size: 16, weight: .medium))
+                    Text("Two matching full backups come first. Then the installer verifies and activates a reversible overlay. It does not write raw flash, send a feeding command or replace the saved meal table.")
+                        .font(.system(size: 13)).foregroundColor(muted).fixedSize(horizontal: false, vertical: true)
+                }
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Backup folder").font(.system(size: 12)).foregroundColor(muted)
+                    Text(model.demo ? "~/Documents/PetFeederLocalBackups" : model.backups.path)
+                        .font(.system(size: 12, design: .monospaced)).textSelection(.enabled).lineLimit(3)
+                    Button("Choose folder…", action: model.chooseBackups).disabled(model.demo).controlSize(.large)
+                }
+                Divider()
+                Toggle("I selected the correct feeder and will keep it powered on", isOn: $model.confirmed).font(.system(size: 13))
+                HStack {
+                    Button("Back", action: model.back).controlSize(.large)
+                    Spacer()
+                    primaryAction(model.demo ? "Preview only" : "Back up and install", image: "arrow.down.to.line", action: model.install)
+                        .disabled(!model.confirmed || model.demo)
+                }
             }
             Text("Experimental: tested on one exact hardware profile. Observe actual meals before relying on it. Battery feeding and clock retention after complete power loss remain unverified.")
-                .font(.caption).foregroundColor(.secondary)
-            Toggle("I selected the correct feeder and will keep it powered on.", isOn: $model.confirmed).font(.callout)
-            HStack {
-                Button("Back", action: model.back)
-                Spacer()
-                Button(model.demo ? "Preview only" : "Back up and install", action: model.install)
-                    .buttonStyle(.borderedProminent).disabled(!model.confirmed || model.demo)
-            }
+                .font(.system(size: 12)).foregroundColor(muted).fixedSize(horizontal: false, vertical: true)
             if model.details?.upgrade == true && !model.demo {
                 Button("Restore stock operation…", role: .destructive) { model.confirmRestore = true }.disabled(!model.confirmed)
             }
@@ -266,29 +344,47 @@ struct InstallerView: View {
     }
 
     private func detail(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 5) { Text(title).font(.caption).foregroundColor(.secondary); Text(value).font(.callout.weight(.semibold)) }
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(.system(size: 12)).foregroundColor(muted)
+            Text(value).font(.system(size: 13, weight: .medium)).fixedSize(horizontal: false, vertical: true)
+        }.frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var completion: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Label("\(model.result == nil ? "Restored" : "You're local.")", systemImage: "checkmark.seal.fill")
-                .font(.system(size: 30, weight: .bold, design: .rounded)).foregroundColor(accent)
+        VStack(alignment: .leading, spacing: 24) {
             if let result = model.result {
-                Text("Connect Home Assistant").font(.title2.bold())
-                Text("Add the companion repository to Marketplace, install it, then set up the integration with these private details.").font(.callout).foregroundColor(.secondary)
-                detail("Local API address", result.apiAddress).textSelection(.enabled)
-                VStack(alignment: .leading, spacing: 7) {
-                    Text("Private API token").font(.caption).foregroundColor(.secondary)
-                    HStack { SecureField("Private token", text: .constant(result.token)).textFieldStyle(.roundedBorder); Button(model.copied ? "Copied" : "Copy", action: model.copyToken) }
+                panel {
+                    Label("Local API verified", systemImage: "checkmark.circle").font(.system(size: 15, weight: .medium)).foregroundColor(accent)
+                    Text("Add the companion repository to Marketplace, install it, then set up the integration with these private details.")
+                        .font(.system(size: 13)).foregroundColor(muted)
+                    HStack(spacing: 12) {
+                        Link("Add to Marketplace", destination: URL(string: "https://my.home-assistant.io/redirect/marketplace_repository/?owner=e2equiel&repository=ha-pet-feeder-local&category=integration")!)
+                            .buttonStyle(.plain).padding(.horizontal, 16).frame(minHeight: 40)
+                            .foregroundColor(onAccent).background(accent).cornerRadius(8)
+                        Link("Set up integration", destination: URL(string: "https://my.home-assistant.io/redirect/config_flow_start/?domain=pet_feeder_local")!)
+                            .buttonStyle(.bordered)
+                    }.controlSize(.large)
                 }
-                HStack {
-                    Link("Add to Marketplace", destination: URL(string: "https://my.home-assistant.io/redirect/marketplace_repository/?owner=e2equiel&repository=ha-pet-feeder-local&category=integration")!)
-                    Link("Set up integration", destination: URL(string: "https://my.home-assistant.io/redirect/config_flow_start/?domain=pet_feeder_local")!)
-                }.buttonStyle(.bordered)
-                Button("Show private backups") { NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: result.backupDirectory.path) }
-                Text("A private home-assistant-setup.json file is saved with your backups. Never post it, the token or your backup files publicly.").font(.caption).foregroundColor(.secondary)
+                panel {
+                    detail("Local API address", result.apiAddress).textSelection(.enabled)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Private API token").font(.system(size: 12)).foregroundColor(muted)
+                        HStack(spacing: 8) {
+                            SecureField("Private token", text: .constant(result.token)).textFieldStyle(.roundedBorder)
+                            Button(model.copied ? "Copied" : "Copy", action: model.copyToken)
+                        }.controlSize(.large)
+                    }
+                    Divider()
+                    Text("A private home-assistant-setup.json file is saved with your backups. Never post it, the token or your backup files publicly.")
+                        .font(.system(size: 12)).foregroundColor(muted)
+                    Button("Show private backups") { NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: result.backupDirectory.path) }.controlSize(.large)
+                }
             } else {
-                Text("The original application and network routing have been restored. The device may take time to reconnect to Tuya.")
+                panel {
+                    Label("Stock operation restored", systemImage: "checkmark.circle").font(.system(size: 16, weight: .medium)).foregroundColor(accent)
+                    Text("The device may take a few minutes to reconnect to Tuya. Its saved meal table was not changed.")
+                        .font(.system(size: 14)).foregroundColor(muted)
+                }
             }
         }
     }
@@ -302,7 +398,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 940, height: 700),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
         window.title = "Pet Feeder Local Installer"
-        window.minSize = NSSize(width: 880, height: 670)
+        window.minSize = NSSize(width: 900, height: 680)
         window.contentView = NSHostingView(rootView: InstallerView(model: model))
         window.delegate = self; window.center(); window.makeKeyAndOrderFront(nil)
         self.window = window

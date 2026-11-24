@@ -2,9 +2,9 @@
 
 <img src="native/macos/Assets/icon.png" width="96" alt="Pet Feeder Local installer icon">
 
-**Native Mac installer:** version 0.2.2 is a Swift / SwiftUI app for macOS 13 or later. It needs **no Python, browser or third-party runtime**. It is currently **not Developer ID signed or notarized**, so Gatekeeper may still block the app itself. See [macOS setup](#macos-setup) and [signing status](docs/macos-signing.md).
+**Native Mac installer:** version 0.3.0 is a Swift / SwiftUI app for macOS 13 or later. It needs **no Python, browser or third-party runtime**. It is currently **not Developer ID signed or notarized**, so Gatekeeper may still block the app itself. See [macOS setup](#macos-setup) and [signing status](docs/macos-signing.md).
 
-Installer **0.2.2** still contains firmware overlay **0.2.0**. This is an installer/UI update; an already working feeder does not need its firmware reinstalled.
+Installer **0.3.0** still contains firmware overlay **0.2.0**. This is an installer/UI update; an already working feeder does not need its firmware reinstalled.
 
 Give a supported camera feeder local controls, an editable onboard feeding schedule and an authenticated RTSP camera. Pair Wi-Fi once with Tuya or Smart Life, run the installer, then use [Pet Feeder Local for Home Assistant](https://github.com/e2equiel/ha-pet-feeder-local). No Tuya developer account, cloud key or tuya-local integration is required for local operation.
 
@@ -12,7 +12,9 @@ Give a supported camera feeder local controls, an editable onboard feeding sched
 
 ![The guided installer checks one explicitly selected feeder](docs/images/installer.jpg)
 
-*Actual installer interface with disconnected demonstration data.*
+*Native Mac installer with disconnected sample data. The Windows/Linux wizard follows the same three-step flow.*
+
+The 0.3 interface adds a quieter, accessible layout, clear installation steps, adaptive light/dark colors and a responsive portable wizard. Working feeders do not need the overlay reinstalled for this interface update. [Interface design and verification](docs/interface-design.md).
 
 ## Is my feeder supported?
 

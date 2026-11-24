@@ -1,0 +1,15 @@
+build/
+dist/
+private/
+backups/
+*.bin
+*.so
+*.tar
+*.zip
+*.mp4
+*.png
+*.jpg
+*.token
+.env
+.venv/
+__pycache__/

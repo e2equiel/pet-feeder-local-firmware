@@ -82,13 +82,15 @@ Original project sources are MIT licensed; no vendor firmware, binaries, private
 
 ```sh
 make test                         # Native C tests, ASan + UBSan
-make rtsp                         # arm-linux-gnueabi-gcc targeting ARMv5TE
+# Build the ARMv5TE module in the pinned, target-compatible toolchain.
+docker build --platform linux/amd64 -t pet-feeder-local-toolchain -f tools/Dockerfile .
+docker run --rm --platform linux/amd64 -v "$PWD:/src" -w /src pet-feeder-local-toolchain make rtsp
 python3 tools/check_imports.py build/pf_local.so --allowed tools/target-imports.txt
 python3 -m unittest discover -s installer/tests -v
 python3 tools/build_release.py    # Validated bundle and complete source-installer ZIP
 ```
 
-The build requires GNU ARM cross-compilation tools and pyelftools for the ABI check. The public import allowlist contains symbol names verified against the target libc, not a vendor library. The ELF must include both SysV and GNU symbol hashes. `tools/check_imports.py` can compare imports against your own privately extracted target libc (requires pyelftools); installation also checks eager loading on the actual device before activation. CI tests the C codecs, JSON parser, durable feeding journal, installer boundaries and UI request protections, then packages portable installers. Builds run on pushes and releases, with no scheduled workflow.
+The release build uses the pinned Debian 12 GNU ARM toolchain and pyelftools for the ABI check. Native cross-compilation with a newer distribution can silently introduce time64/fortified libc imports absent from this feeder; the import gate rejects those builds. The public import allowlist contains symbol names verified against the target libc, not a vendor library. The ELF must include both SysV and GNU symbol hashes. `tools/check_imports.py` can compare imports against your own privately extracted target libc (requires pyelftools); installation also checks eager loading on the actual device before activation. CI tests the C codecs, JSON parser, durable feeding journal, installer boundaries and UI request protections, then packages portable installers. Builds run on pushes and releases, with no scheduled workflow.
 
 [Local API](docs/local-api.md) · [MCU protocol](docs/mcu-protocol.md) · [Recovery](docs/recovery.md) · [Validation](docs/validation.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
 

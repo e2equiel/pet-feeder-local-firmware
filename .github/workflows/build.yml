@@ -15,9 +15,10 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.14'
-      - run: sudo apt-get update && sudo apt-get install -y gcc-arm-linux-gnueabi
       - run: python -m pip install pyelftools==0.32
-      - run: make test rtsp
+      - run: make test
+      - run: docker build --platform linux/amd64 -t pet-feeder-local-toolchain:ci -f tools/Dockerfile .
+      - run: docker run --rm --platform linux/amd64 -v "$PWD:/src" -w /src pet-feeder-local-toolchain:ci make rtsp
       - run: python tools/check_imports.py build/pf_local.so --allowed tools/target-imports.txt
       - run: python -m unittest discover -s installer/tests -v
       - run: python tools/build_release.py

@@ -1,5 +1,9 @@
 # Pet Feeder Local Firmware
 
+**macOS packaging update:** the old 0.2.0 portable ZIP can be blocked repeatedly for its individual Python libraries. Use the current source installer with a trusted Python installation, or the 0.2.1 `.app` package. The `.app` is currently **not Developer ID signed or notarized**, so macOS may still block it. See [macOS setup](#macos-setup) and [signing status](docs/macos-signing.md).
+
+Installer **0.2.1** still contains firmware overlay **0.2.0**. This is an installer/UI update; an already working feeder does not need its firmware reinstalled.
+
 Give a supported camera feeder local controls, an editable onboard feeding schedule and an authenticated RTSP camera. Pair Wi-Fi once with Tuya or Smart Life, run the installer, then use [Pet Feeder Local for Home Assistant](https://github.com/e2equiel/ha-pet-feeder-local). No Tuya developer account, cloud key or tuya-local integration is required for local operation.
 
 **Experimental community release, tested on one device.** This is a reversible firmware overlay. It retains the original proprietary camera encoder and feeding-controller firmware; it is not a complete open-source replacement image. It changes neither the bootloader nor the read-only kernel/root filesystem. The new API controls the feeding MCU directly and blocks the device's Internet routes.
@@ -27,7 +31,7 @@ A similar-looking feeder is not necessarily compatible. The installer checks the
 You need a computer on the same LAN, the feeder's power adapter, and permission to modify this feeder. A microSD card, soldering and Tuya developer credentials are not needed for this supported profile.
 
 1. **Connect Wi-Fi once.** Set up the feeder normally with Tuya or Smart Life and confirm it joins your Wi-Fi. Find its private IPv4 address in your router's connected-device list or the app's device information. A DHCP reservation in the router keeps the address stable. Direct installation on a factory-fresh, unpaired feeder has **not** been validated.
-2. **Download the complete installer ZIP** from [Releases](https://github.com/e2equiel/pet-feeder-local-firmware/releases). Choose your operating system and CPU, extract it, and run `PetFeederLocalInstaller` (`.exe` on Windows). It opens a local browser wizard. Keep the installer process open until it finishes. If no portable build is available, use the source installer below.
+2. **Download the complete installer ZIP** from [Releases](https://github.com/e2equiel/pet-feeder-local-firmware/releases). Choose your operating system and CPU and extract it. On macOS, open **PetFeederLocalInstaller.app** with a double-click; Finder may hide the `.app` suffix. On Windows, run `PetFeederLocalInstaller.exe`; on Linux, run `PetFeederLocalInstaller`. A local browser wizard opens. Keep it running until verification finishes, then use **Close installer**. For macOS blocks or a missing portable build, use the source installer below.
 3. **Check, review and install.** Enter this feeder's IP address. The published factory root password is prefilled. Click **Check compatibility**, review the detected profile, confirm the selected device, and click **Back up and install**. No device is scanned or selected automatically. Leave the feeder powered on throughout the backup and verification.
 4. **Connect Home Assistant.** The completion page shows the local API address and a private token. Use its Marketplace and Add integration buttons, following the [companion quick start](https://github.com/e2equiel/ha-pet-feeder-local#installation). Add the bundled dashboard card through the visual card picker.
 
@@ -43,6 +47,12 @@ The installer saves two complete matching flash reads and a private configuratio
 
 Do not press **Remove device**, factory reset, or change Wi-Fi in the Tuya app during installation: these actions can reset the device's network setup. The app is no longer required for ongoing local controls after installation. If changing Wi-Fi later, restore stock operation first and follow [recovery](docs/recovery.md).
 
+### macOS setup
+
+The portable download contains a normal **PetFeederLocalInstaller.app**. Keep the app intact and double-click it; there is no Terminal command to find inside the bundle. It opens its interface in your default browser and runs in the background. Use **Close installer** in the browser when finished.
+
+The app bundle is currently sealed with an ad-hoc signature for package integrity, **not** a trusted Developer ID signature. Apple notarization is pending. Packaging it as an app fixes the loose runtime layout, but does not guarantee Gatekeeper acceptance. Do not approve individual Python libraries one by one or disable Gatekeeper. If macOS blocks it, the source installer below uses an already installed, trusted Python instead of distributing a second Python runtime.
+
 ### Source installer fallback
 
 Install Python 3.10 or newer from [python.org](https://www.python.org/downloads/), download the **source-installer ZIP** from Releases and extract it. Open a terminal in the extracted folder:
@@ -55,7 +65,9 @@ py install.py
 python3 install.py
 ```
 
-There are no Python package dependencies. The complete release ZIP includes the built overlay; GitHub's automatic **Source code** archives do not. The program prints a `http://127.0.0.1:<port>/` address if a browser does not open. A portable build is unsigned; if your OS prevents it from running, use this source fallback rather than disabling system protections.
+On macOS with Python already installed from python.org or Homebrew, double-click **Start Installer.command** instead of typing the command. It opens a Terminal window and then the browser wizard. It checks the standard Python locations and explains what to install if no suitable interpreter is available. Keep that window open until you click **Close installer** in the browser.
+
+There are no Python package dependencies. The complete release ZIP includes the built overlay; GitHub's automatic **Source code** archives do not. The program prints a `http://127.0.0.1:<port>/` address if a browser does not open. The source launcher itself may require an initial macOS approval; it contains no bundled macOS Python libraries to approve separately.
 
 ![Review the supported profile before installation](docs/images/review.jpg)
 

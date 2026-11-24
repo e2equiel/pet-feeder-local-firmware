@@ -8,10 +8,13 @@ import os
 from pathlib import Path
 import secrets
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from socketserver import TCPServer
 import sys
 import threading
+import subprocess
 import webbrowser
 
+from . import __version__, FIRMWARE_VERSION
 from .bundle import Bundle
 from .device import Installer
 from .telnet import DeviceError, Telnet, local_address
@@ -51,7 +54,7 @@ class Wizard:
                 self.progress("review", "Demo only — no device connection was made.")
                 with self.lock:
                     self.status["details"] = {"model": "V330L-DU4L-VS", "stock_version": "68.00.09",
-                                              "version_to_install": "0.2.0", "upgrade": False}
+                                              "version_to_install": FIRMWARE_VERSION, "upgrade": False}
                 return
             if action == "inspect":
                 if self.installer:
@@ -114,7 +117,7 @@ def make_server(wizard: Wizard) -> ThreadingHTTPServer:
             if not self.valid_host():
                 self.reply(403, b"Forbidden", "text/plain")
             elif self.path == "/":
-                self.reply(200, page.replace("__CSRF__", wizard.csrf).replace("__DEMO__", "true" if wizard.demo else "false").encode(), "text/html; charset=utf-8")
+                self.reply(200, page.replace("__CSRF__", wizard.csrf).replace("__INSTALLER_VERSION__", __version__).replace("__DEMO__", "true" if wizard.demo else "false").encode(), "text/html; charset=utf-8")
             elif self.path == "/status" and secrets.compare_digest(self.headers.get("X-PFL-CSRF", ""), wizard.csrf):
                 with wizard.lock:
                     payload = json.dumps({**wizard.status, "busy": wizard.busy}).encode()
@@ -135,12 +138,26 @@ def make_server(wizard: Wizard) -> ThreadingHTTPServer:
                 data = json.loads(self.rfile.read(length))
                 if not isinstance(data, dict):
                     raise ValueError
+                if self.path == "/quit":
+                    with wizard.lock:
+                        if wizard.busy:
+                            raise DeviceError("Wait for the current operation to finish before closing the installer.")
+                    self.reply(200, b'{"stopped":true}', "application/json")
+                    threading.Thread(target=self.server.shutdown, daemon=True).start()
+                    return
                 wizard.submit(self.path.removeprefix("/"), data)
                 self.reply(202, b"{}", "application/json")
             except (ValueError, DeviceError) as error:
                 self.reply(400, json.dumps({"error": str(error) if isinstance(error, DeviceError) else "Invalid request"}).encode(), "application/json")
 
-    return ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    class LoopbackServer(ThreadingHTTPServer):
+        def server_bind(self) -> None:
+            # HTTPServer.server_bind calls getfqdn, which can wait for DNS on
+            # macOS even for localhost. This service only uses numeric loopback.
+            TCPServer.server_bind(self)
+            self.server_name, self.server_port = self.server_address[:2]
+
+    return LoopbackServer(("127.0.0.1", 0), Handler)
 
 
 def main() -> None:
@@ -149,7 +166,10 @@ def main() -> None:
     parser.add_argument("--backups", type=Path, default=Path.home() / "Documents" / "PetFeederLocalBackups")
     parser.add_argument("--demo", action="store_true", help="Display a disconnected demo; no device is contacted")
     parser.add_argument("--no-browser", action="store_true")
+    parser.add_argument("--ready-file", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.ready_file and not (args.demo and args.no_browser):
+        parser.error("--ready-file is only available for a disconnected --demo --no-browser check")
     root = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[2]))
     bundle_path = args.bundle or root / "bundle"
     try:
@@ -159,9 +179,16 @@ def main() -> None:
     wizard = Wizard(bundle, args.backups, demo=args.demo)
     server = make_server(wizard)
     url = f"http://127.0.0.1:{server.server_port}/"
-    print("Open the installer at " + url, flush=True)
+    if sys.stdout is not None:
+        print("Open the installer at " + url, flush=True)
+    if args.ready_file:
+        args.ready_file.write_text(json.dumps({"url": url}) + "\n")
     if not args.no_browser:
-        webbrowser.open(url)
+        if sys.platform == "darwin":
+            # LaunchServices opens the default browser without Apple Events automation.
+            subprocess.Popen(["/usr/bin/open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            webbrowser.open(url)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

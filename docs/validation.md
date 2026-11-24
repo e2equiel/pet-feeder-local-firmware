@@ -14,7 +14,7 @@ Native main-stream HEVC video (1920×1080, 10 fps) decoded without errors direct
 
 The installer tests cover exact-profile refusal, foreign hook preservation, damaged bundles, binary transfer integrity, two matching complete backups, incomplete/differing backup refusal, private backup permissions, rollback preserving operation reservations, restore without a healthy API, recovery timer ordering, split Telnet negotiation, loopback Host/Origin/CSRF protections and disconnected demo operation. Native C tests run with AddressSanitizer and UndefinedBehaviorSanitizer for the bounded MCU codec, JSON parser and durable reservation journal. Cross-compilation rejects warnings and the actual target libc satisfies the module's dynamic imports.
 
-The guided installer and integration card/editor were visually checked in a browser with synthetic disconnected data. Portable installers are unsigned; source-installer fallback needs Python 3.10+ and no third-party Python packages.
+The guided installer and integration card/editor were visually checked in a browser with synthetic disconnected data. Portable installers have no trusted publisher signature; source-installer fallback needs Python 3.10+ and no third-party Python packages.
 
 The 0.2 installer also passed a real upgrade on the same unit: two full backups matched, the running process mapped the selected versioned module, the original meal rows and token were preserved, and the manual command counter stayed at zero. A new immutable-partition read matched the original baseline. The SSDP response and XML identity were checked against this target only; the shared local main stream produced 63 completely decoded frames after the upgrade. Leading non-keyframes were excluded when making the capture so that decoding started at a complete GOP.
 
@@ -25,3 +25,11 @@ The macOS ARM64 portable installer was built and smoke-tested locally: its embed
 Physical food delivery has not been observed. The test unit has no batteries or microSD. Battery-backed feeding, complete-power-loss clock retention, long-duration offline behavior, additional hardware variants, audio and the separate video substream remain unverified. A serial acknowledgement or scheduled-feeding record is not proof that food arrived in the bowl. The overlay retains the vendor's proprietary encoder and MCU firmware.
 
 Automated software tests, on-device installation checks, successful camera decoding and physical feeding are distinct kinds of evidence. Do not read one as proof of the others.
+
+## Installer 0.2.1 packaging update
+
+A user downloaded the 0.2.0 macOS ZIP through a browser and macOS blocked Python and successive native extensions before the wizard could start. The original build-directory smoke test did not represent that Gatekeeper path. Installer 0.2.1 now creates a complete app bundle, preserves its resource links and signature envelope, and tests the extracted release archive. Ad-hoc bundle integrity and disconnected startup checks are distinct from Developer ID trust/notarization; the latter remains pending. See [macOS signing](macos-signing.md).
+
+The source installer adds a double-clickable launcher for an existing trusted Python. The extracted macOS ARM64 app passed deep/strict signature integrity verification, disconnected startup, embedded-asset loading and clean shutdown. The source ZIP's launcher was checked with an existing Homebrew Python. The installer suite passes 27 tests, including startup with DNS unavailable and authenticated close behavior. The notarization operator rejects the ad-hoc build before an upload; its Apple submission path remains untested.
+
+The installed firmware remains 0.2.0 and is not changed by these packaging updates. No further device or physical feeding experiment is needed or performed for this update.

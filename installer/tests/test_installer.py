@@ -194,10 +194,38 @@ class WizardSecurityTests(unittest.TestCase):
         self.assertEqual(context.exception.code,403)
     def test_cannot_install_without_review(self):
         with self.assertRaises(DeviceError):self.wizard.submit("install",{})
+    def test_close_requires_csrf(self):
+        request=Request(self.origin+"/quit",data=b"{}",headers={"Origin":self.origin})
+        with self.assertRaises(HTTPError) as context:urlopen(request)
+        self.assertEqual(context.exception.code,403)
+        context.exception.close()
+
+    def test_close_refuses_an_active_operation(self):
+        self.wizard.busy=True
+        request=Request(self.origin+"/quit",data=b"{}",headers={"X-PFL-CSRF":self.wizard.csrf,"Origin":self.origin})
+        with self.assertRaises(HTTPError) as context:urlopen(request)
+        self.assertEqual(context.exception.code,400)
+        context.exception.close()
+
+    def test_close_stops_the_idle_loopback_server(self):
+        request=Request(self.origin+"/quit",data=b"{}",headers={"X-PFL-CSRF":self.wizard.csrf,"Origin":self.origin})
+        with urlopen(request) as response:self.assertEqual(json.load(response),{"stopped":True})
+        self.thread.join(timeout=3)
+        self.assertFalse(self.thread.is_alive())
+
     def test_demo_never_connects_to_a_device(self):
         with patch("pet_feeder_installer.wizard.Telnet") as transport:
             self.wizard.run("inspect",{"address":"192.168.1.123"})
             self.assertEqual(self.wizard.status["stage"],"review")
             transport.assert_not_called()
+
+    def test_local_startup_does_not_require_dns(self):
+        with patch("socket.getfqdn", side_effect=AssertionError("DNS is unavailable")):
+            server=make_server(self.wizard)
+            try:
+                self.assertEqual(server.server_name,"127.0.0.1")
+                self.assertGreater(server.server_port,0)
+            finally:
+                server.server_close()
 
 if __name__=="__main__":unittest.main()

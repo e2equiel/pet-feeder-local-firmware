@@ -55,7 +55,7 @@ The download contains **PetFeederLocalInstaller.app**, a native Swift / SwiftUI 
 
 The app is sealed with an ad-hoc signature for integrity, **not** a trusted Developer ID signature. Apple notarization remains pending. Removing Python eliminates the separate Python-library approvals, but does not guarantee Gatekeeper acceptance: macOS may still block this app as an unidentified developer. Local-network access and permission to save backups are separate macOS privacy controls. Do not disable Gatekeeper or approve each old Python library. The old 0.2.0/0.2.1 Mac Python bundles are superseded.
 
-The Swift implementation has dedicated boundary tests and extracted-package verification. Its actual on-device upgrade/restore path has not yet been revalidated independently of the existing Python installer; see [validation](docs/validation.md). The firmware payload is unchanged.
+The Swift implementation has dedicated boundary tests and extracted-package verification. A native upgrade and a controlled activation-verification failure with real rollback passed on the supported test unit, preserving its token, meals and operation journal. Native first installation on untouched stock firmware and the native stock-restore action still need separate hardware validation. See [validation](docs/validation.md). The firmware payload is unchanged.
 
 ### Source installer fallback
 

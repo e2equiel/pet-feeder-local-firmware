@@ -8,7 +8,8 @@
 - Recognize real Telnet CRLF completion frames with UTF-16 regular-expression matching and include a hardware-derived regression fixture.
 - Retain the native backup-folder dialog until completion and update the selected destination on the main queue.
 - Preserve the existing Windows/Linux and source installer. Firmware remains 0.2.0. No trusted Apple signing/notarization is claimed.
-- Keep native on-device upgrade/restore validation explicitly pending; the existing Python installer's hardware validation does not establish the Swift port's behavior.
+- Verify a native GUI upgrade and real rollback after an intentionally failed activation check on the supported unit; preserve its token, meals, journal and immutable flash hash, with local video recovered.
+- Keep native first installation on untouched stock firmware and native stock restoration explicitly pending separate hardware validation.
 
 ## Installer 0.2.1
 

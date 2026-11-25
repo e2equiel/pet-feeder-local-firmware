@@ -8,7 +8,7 @@
 #define PF_MAX_SCHEDULE_FRAME (7 + 5 * PF_MAX_MEALS)
 
 struct pf_meal {
-    uint8_t weekdays; /* Sunday=bit0 through Saturday=bit6. */
+    uint8_t weekdays; /* Raw UART/API: Saturday=bit0 through Sunday=bit6; HA reverses bits. */
     uint8_t hour;
     uint8_t minute;
     uint8_t portions;

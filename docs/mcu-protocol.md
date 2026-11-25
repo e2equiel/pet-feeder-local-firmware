@@ -12,7 +12,7 @@ The stock application opens `/dev/ttySAK1`. Frames observed so far use `FF FF`, 
 - Query response payload: `01 <count> <rows> <checksum>` (observed on hardware).
 - Set payload: `10 <count> <rows> <checksum>` (verified by writing, querying, and restoring a disabled hardware fixture with Internet blocked).
 - Each row has five bytes: weekday mask, hour, minute, portions, enabled.
-- Weekday bits: Sunday bit 0 through Saturday bit 6.
+- Raw weekday bits: Saturday bit 0 through Sunday bit 6 for this MCU profile. HA 0.4+ reverses these seven bits at its client boundary; its actions/calendar still use Sunday bit 0. Tuesday raw `16` and Wednesday raw `8` were exercised physically; remaining days follow the inferred bit-order model. This private UART format differs from Tuya’s documented cloud DP convention.
 - Enabled: 0 disabled, 1 enabled. The stock DP207 parser converts character 8 of each 15-character row into this field.
 - Checksum: sum of all preceding payload bytes modulo 256.
 - The stock application allocates space for eight rows.
@@ -36,7 +36,7 @@ The application multiplies the requested portions by a fixed ten-gram value. Thi
 - Adding one disabled synthetic entry, reading the changed table, restoring the original table, and verifying exact readback, all while Internet routes were blocked.
 - Comparing one stock one-portion command against the reconstructed encoder.
 
-One one-portion command was subsequently sent through the authenticated local API and acknowledged. Repeating its operation ID did not send another command. A scheduled-feeding record was also captured from the MCU with the entire camera application stopped for 25 seconds; the API manual-command counter did not increase. Physical delivery and battery-backed operation remain unverified.
+One one-portion command was subsequently sent through the authenticated local API and acknowledged. Repeating its operation ID did not send another command. A scheduled-feeding record was also captured from the MCU with the entire camera application stopped for 25 seconds; the API manual-command counter did not increase. Later owner-observed trials confirmed actual manual and scheduled food delivery. Battery-backed operation remains unverified; see validation.md.
 
 ## MCU wall clock
 
@@ -45,3 +45,7 @@ Stock function `0x14b394` emits command `06`, payload length six: `(full year + 
 ## Required write guarantees
 
 The local API must validate counts and ranges, reject stale schedule revisions, issue a write once, and verify the MCU's fresh readback. A timeout must not turn into repeated feeding. Changing a UI portion selector must never emit a motor command.
+
+## Observed scheduled row record
+
+During later owner-observed scheduled deliveries, the MCU emitted `FF FC 07 05` followed by the five-byte meal row. The corresponding manual-command counter did not increase while the Linux control application was paused. This identifies a scheduled row event for this profile; it does not turn every future acknowledgement or event into proof of food delivery.

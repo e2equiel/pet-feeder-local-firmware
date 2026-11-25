@@ -48,6 +48,16 @@ int main(void) {
     assert(pf_encode_schedule(meals,9,frame,sizeof(frame),&length)<0);
     assert(pf_encode_schedule(meals,2,frame,5,&length)<0);
     assert(pf_encode_schedule(0,0,frame,sizeof(frame),&length)==0 && length==7);
+    /* A full active table must retain the eighth row and asymmetric masks. */
+    struct pf_meal full[PF_MAX_MEALS]={{64,6,5,1,1},{32,8,10,2,1},{16,10,15,3,1},{8,12,20,4,1},
+                                      {4,14,25,5,1},{2,16,30,6,1},{1,18,35,7,1},{127,22,40,8,1}};
+    assert(pf_encode_schedule(full,PF_MAX_MEALS,frame,sizeof(frame),&length)==0);
+    assert(length==47 && frame[5]==8);
+    frame[4]=1;sum=0;
+    for (size_t i=4;i<length-1;i++) sum=(uint8_t)(sum+frame[i]);
+    frame[length-1]=sum;
+    assert(!pf_decode_schedule(frame+4,length-4,decoded,&count));
+    assert(count==8 && !memcmp(full,decoded,sizeof(full)));
     puts("MCU protocol validation passed");
     return 0;
 }

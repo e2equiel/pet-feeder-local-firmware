@@ -81,6 +81,8 @@ There are no Python package dependencies. The complete release ZIP includes the 
 
 ## What happens to feeding and video?
 
+If the feeder already serves your pets, follow [Migrating active feeders](docs/migrating-active-feeders.md) to record each schedule, install one device at a time and observe the next normal meal before moving to another device.
+
 - **Choose portions, then Serve.** Changing the portion selection never actuates the motor. An uncertain request is not retried automatically.
 - **Save up to eight weekly meals.** Edit weekdays, time, portions and enabled state. The MCU stores and executes its own table; HA and Tuya do not run meal timers. Saving verifies the exact MCU readback and detects concurrent edits.
 - **Keep local time valid.** HA synchronizes the MCU's wall clock in HA's configured timezone every five minutes while online. The MCU cannot learn a timezone or DST change while disconnected. Complete power-loss clock retention remains unverified.

@@ -195,6 +195,35 @@ test("API accepts complete bounded JSON only") {
         try rejects { _ = try parseDeviceHTTP(Data(response.utf8)) }
     }
 }
+test("upgrade preserves all eight enabled rows, including asymmetric weekday masks") {
+    let installer = InstallFixture(transport: FakeTransport(), bundle: bundle, folder: temporary)
+    let rows: [[String: Any]] = [64,32,16,8,4,2,1,127].enumerated().map {
+        ["weekdays": $0.element, "hour": $0.offset, "minute": 5, "portions": $0.offset + 1, "enabled": true]
+    }
+    installer.token = String(repeating: "a", count: 64); installer.previousSchedule = rows as NSArray
+    var resources = [APIResource]()
+    installer.api = { _, _, resource in
+        resources.append(resource)
+        return resource == .info ? ["version": "0.2.0", "id": "00:11:22:33:44:55"] : ["meals": rows]
+    }
+    let result = try installer.install(temporary)
+    try expect(result.scheduledMeals == 8, "An active meal was lost")
+    try expect(result.token == String(repeating: "a", count: 64), "Token changed")
+    try expect(resources == [.info, .schedules], "Installation issued unexpected API operations")
+    try expect(!installer.writes.contains(where: { $0.contains("/dev/ttySAK") }), "Installation wrote to the MCU")
+}
+test("a changed final row in a full active table rolls back") {
+    let installer = InstallFixture(transport: FakeTransport(), bundle: bundle, folder: temporary)
+    var rows: [[String: Any]] = (0..<8).map { ["weekdays": 16, "hour": $0, "minute": 5, "portions": 1, "enabled": true] }
+    installer.previousSchedule = rows as NSArray
+    rows[7]["enabled"] = false
+    installer.api = { _, _, resource in
+        resource == .info ? ["version": "0.2.0", "id": "00:11:22:33:44:55"] : ["meals": rows]
+    }
+    try rejects { _ = try installer.install(temporary) }
+    try expect(installer.writes.last!.hasSuffix("/rollback.sh"), "Changed final row was accepted")
+    try expect(!installer.writes.contains(where: { $0.hasPrefix("touch /run/") && $0.contains("/committed") }), "Changed table committed")
+}
 test("console command length is bounded before sending") {
     try rejects { _ = try TelnetTransport.envelope(String(repeating: "x", count: 2000), marker: "PFL_DONE_test") }
     try expect(try TelnetTransport.envelope("printf synthetic", marker: "PFL_DONE_test").count < 1000, "Small command rejected")

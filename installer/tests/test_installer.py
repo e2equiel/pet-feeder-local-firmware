@@ -163,6 +163,40 @@ class BoundaryTests(unittest.TestCase):
         self.assertIn("rollback.sh",commands[-1])
         self.assertFalse(any("POST" in command or "/dev/mtd" in command for command in commands))
 
+    def test_upgrade_preserves_all_eight_enabled_rows_with_asymmetric_days(self):
+        meals=[{"weekdays":mask,"hour":hour,"minute":5,"portions":hour+1,"enabled":True}
+               for hour,mask in enumerate([64,32,16,8,4,2,1,127])]
+        self.installer.previous_schedule=meals
+        self.installer.token="synthetic-existing-token"
+        self.installer.inspect=Mock(return_value={"model":"synthetic","identity":"synthetic"})
+        self.installer.backup=Mock(return_value=self.directory)
+        self.installer.upload=Mock()
+        self.transport.run.return_value=""
+        with patch("pet_feeder_installer.device.device_api",side_effect=[
+            {"version":"0.2.0","id":"synthetic"},{"meals":[dict(meal) for meal in meals]}
+        ]) as api:
+            result=self.installer.install(self.directory)
+        self.assertEqual(result["scheduled_meals"],8)
+        self.assertEqual(result["token"],"synthetic-existing-token")
+        self.assertEqual([call.args[2] for call in api.call_args_list],["info","schedules"])
+        self.assertFalse(any("/dev/ttySAK" in call.args[0] for call in self.transport.run.call_args_list))
+
+    def test_last_of_eight_active_rows_cannot_change_before_commit(self):
+        meals=[{"weekdays":16,"hour":hour,"minute":5,"portions":1,"enabled":True} for hour in range(8)]
+        changed=[dict(meal) for meal in meals];changed[-1]["enabled"]=False
+        self.installer.previous_schedule=meals
+        self.installer.inspect=Mock(return_value={"model":"synthetic","identity":"synthetic"})
+        self.installer.backup=Mock(return_value=self.directory)
+        self.installer.upload=Mock();self.transport.run.return_value=""
+        with patch("pet_feeder_installer.device.device_api",side_effect=[
+            {"version":"0.2.0","id":"synthetic"},{"meals":changed}
+        ]):
+            with self.assertRaisesRegex(DeviceError,"Schedule verification failed"):
+                self.installer.install(self.directory)
+        commands=[call.args[0] for call in self.transport.run.call_args_list]
+        self.assertIn("rollback.sh",commands[-1])
+        self.assertFalse(any(command.startswith("touch /run/") and "/committed" in command for command in commands))
+
     def test_telnet_negotiation_can_be_split_across_packets(self):
         transport=object.__new__(Telnet);transport.socket=Mock();transport._partial=b""
         self.assertEqual(transport._clean(b"a\xff\xfd"),b"a")

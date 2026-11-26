@@ -14,6 +14,7 @@
 #include "mcu_protocol.h"
 #include "journal.h"
 #include "discovery.h"
+#include "feeding_events.h"
 
 #ifdef __GLIBC__
 extern int uclibc_sscanf(const char *,const char *,...) __asm__("sscanf");
@@ -38,6 +39,12 @@ static struct pf_journal journal;
 static int feeding_enabled,journal_ready,feed_ack,clock_ack,clock_synced;
 static unsigned manual_commands_sent;
 static char feed_operation[65];
+
+static uint64_t event_milliseconds(void) {
+    struct timespec t;
+    if (clock_gettime(CLOCK_MONOTONIC,&t)) return 0;
+    return (uint64_t)t.tv_sec*1000u+(unsigned)(t.tv_nsec/1000000);
+}
 
 static unsigned milliseconds(void) {
     struct timespec t;
@@ -78,6 +85,7 @@ static void drain_serial(void) {
         serial_frame[serial_used++]=byte;
         if (serial_used<4 || serial_used<(size_t)serial_frame[3]+4) continue;
         last_mcu_ms=milliseconds();
+        pf_events_observe(serial_frame,serial_used,event_milliseconds());
         if (pending==5 && serial_frame[2]==1 && serial_frame[3]==1)
             feed_ack=serial_frame[4]==0 ? 1:-1;
         if (pending==6 && serial_frame[2]==6 && serial_frame[3]==1)
@@ -288,8 +296,13 @@ static void request_ready(size_t header_length,size_t body_length) {
     }
     if (!header_auth(input,header_length,"Bearer ",api_token)) { respond(401,"{\"error\":\"invalid_auth\"}"); return; }
     if (!strcmp(method,"GET") && !strcmp(path,"/api/v1/info")) {
-        snprintf(body,sizeof(body),"{\"api_version\":1,\"id\":\"%s\",\"model\":\"V330L-DU4L-VS\",\"version\":\"0.2.0\",\"max_meals\":8,\"max_portions\":10,\"feeding_enabled\":%s,\"rtsp_port\":8555}",device_id,feeding_enabled && journal_ready ? "true":"false");
+        snprintf(body,sizeof(body),"{\"api_version\":1,\"id\":\"%s\",\"model\":\"V330L-DU4L-VS\",\"version\":\"0.2.1\",\"max_meals\":8,\"max_portions\":10,\"feeding_enabled\":%s,\"rtsp_port\":8555,\"scheduled_feed_events\":true}",device_id,feeding_enabled && journal_ready ? "true":"false");
         respond(200,body);
+    } else if (!strcmp(method,"GET") && !strcmp(path,"/api/v1/events")) {
+        char events[3072];
+        if (pf_events_json(events,sizeof(events),event_milliseconds()))
+            respond(503,"{\"error\":\"event_identity_unavailable\"}");
+        else respond(200,events);
     } else if (!strcmp(method,"GET") && !strcmp(path,"/api/v1/status")) {
         snprintf(body,sizeof(body),"{\"mcu_connected\":%s,\"schedule_revision\":\"%08x\",\"serial_fault\":%s,\"manual_commands_sent\":%u,\"clock_synced\":%s}",
             last_mcu_ms && (unsigned)(milliseconds()-last_mcu_ms)<30000 ? "true":"false",
@@ -355,6 +368,15 @@ static void initialize(void) {
     journal_ready=!pf_journal_open(&journal,directory);
     snprintf(path,sizeof(path),"%s/feeding.enabled",directory);
     feeding_enabled=access(path,F_OK)==0;
+    unsigned char entropy[16]; char boot_id[33]={0};
+    int random=open("/dev/urandom",O_RDONLY);
+    if (random>=0) {
+        if (read(random,entropy,sizeof(entropy))==(ssize_t)sizeof(entropy)) {
+            for (unsigned i=0;i<sizeof(entropy);i++) snprintf(boot_id+2*i,3,"%02x",entropy[i]);
+            pf_events_init(boot_id);
+        }
+        close(random);
+    }
     listener=socket(AF_INET,SOCK_STREAM,0);
     if (listener<0) return;
     int one=1; setsockopt(listener,SOL_SOCKET,SO_REUSEADDR,&one,sizeof(one));

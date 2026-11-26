@@ -1,5 +1,11 @@
 # Changelog
 
+## Installer 0.3.1 / overlay 0.2.1
+
+- Add a read-only event endpoint for observed MCU scheduled-row reports, with a per-process random identity, monotonic report age and bounded recent history.
+- Advertise the scheduled-event capability for HA 0.5.0. Do not change motor encoding, MCU schedule execution, clock encoding or saved meal tables.
+- Keep installer backups, rollback, profile checks and token preservation intact. The existing native app packages the updated overlay without adding Python or runtime dependencies.
+
 ## Installer 0.3.0
 
 - Redesign the native Mac app and portable wizard with the original icon, a three-step layout, neutral surfaces and adaptive light/dark colors.

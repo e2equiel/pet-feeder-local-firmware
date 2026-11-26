@@ -2,9 +2,9 @@
 
 <img src="native/macos/Assets/icon.png" width="96" alt="Pet Feeder Local installer icon">
 
-**Native Mac installer:** version 0.3.0 is a Swift / SwiftUI app for macOS 13 or later. It needs **no Python, browser or third-party runtime**. It is currently **not Developer ID signed or notarized**, so Gatekeeper may still block the app itself. See [macOS setup](#macos-setup) and [signing status](docs/macos-signing.md).
+**Native Mac installer:** version 0.3.1 is a Swift / SwiftUI app for macOS 13 or later. It needs **no Python, browser or third-party runtime**. It is currently **not Developer ID signed or notarized**, so Gatekeeper may still block the app itself. See [macOS setup](#macos-setup) and [signing status](docs/macos-signing.md).
 
-Installer **0.3.0** still contains firmware overlay **0.2.0**. This is an installer/UI update; an already working feeder does not need its firmware reinstalled.
+Installer **0.3.1** contains firmware overlay **0.2.1**. It adds passive scheduled-feeding telemetry for HA 0.5.0 notifications. Existing controls remain compatible with overlay 0.2.0; upgrade the overlay to use the new MCU-event trigger. The update preserves the saved MCU meal table.
 
 Give a supported camera feeder local controls, an editable onboard feeding schedule and an authenticated RTSP camera. Pair Wi-Fi once with Tuya or Smart Life, run the installer, then use [Pet Feeder Local for Home Assistant](https://github.com/e2equiel/ha-pet-feeder-local). No Tuya developer account, cloud key or tuya-local integration is required for local operation.
 

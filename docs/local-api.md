@@ -6,6 +6,7 @@ HTTP listens on port 8080. Every API request requires `Authorization: Bearer <de
 | --- | --- | --- |
 | GET | `/api/v1/info` | Device identity, API version, model, and capabilities |
 | GET | `/api/v1/status` | Observed MCU connectivity, serial faults, clock sync, and command counter |
+| GET | `/api/v1/events` | Passive scheduled-row telemetry when `info.scheduled_feed_events` is true (overlay 0.2.1+) |
 | GET | `/api/v1/schedules` | Query the MCU and return its fresh table and revision |
 | PUT | `/api/v1/schedules` | Validate, compare a fresh revision, write once, query again, and verify exact readback |
 | POST | `/api/v1/clock` | Send explicit local year/month/day/hour/minute/second and await MCU acknowledgement |
@@ -30,3 +31,11 @@ The persistent launcher discards vendor application output instead of accumulati
 The overlay answers bounded SSDP M-SEARCH requests for `urn:pet-feeder-local:device:Feeder:1` on UDP multicast 239.255.255.250:1900. `GET /description.xml` is intentionally unauthenticated and contains only the device type, project/model names, stable LAN identity and UDN. It contains no token, feeding data or camera URL. All `/api/v1/` endpoints remain authenticated. Discovery works on the local multicast segment; manual setup remains available across networks that do not carry SSDP.
 
 The API v1 schedule mask is intentionally the raw MCU mask, including in revisions. For this profile it is the reverse of the HA action convention: raw Tuesday is `16`, raw Sunday is `64`, daily is `127`. The HA 0.4+ client converts both reads and writes. Direct API clients must use the raw order; do not change firmware revisions or apply a second conversion. Early documentation incorrectly described raw masks as Sunday-first. Daily and Monday–Friday examples could not expose that error because their bit patterns are symmetric.
+
+## Scheduled-row telemetry (overlay 0.2.1+)
+
+`info.scheduled_feed_events: true` advertises `GET /api/v1/events`. Reading it makes no serial write. Only the observed `FF FC 07 05` MCU record with a valid enabled meal row is accepted; manual command acknowledgements do not create events.
+
+The response contains a 32-character random `boot_id`, a monotonic `sequence` within that camera-process lifetime, and at most sixteen recent `events`. Each item has its own `sequence`, monotonic `age_ms`, and raw-API `meal`. Reports older than ten minutes are omitted. The Linux wall clock is not used to timestamp a report; consumers reconstruct its recent UTC observation time from their current clock and the reported age. A new camera process changes `boot_id` and starts with an empty history.
+
+HA 0.5.0 persists its cursor before emitting a scheduled-feeding event, establishes a baseline on its first connection, and suppresses reports older than two minutes. This is a report that the MCU executed a scheduled row, not independent proof that food fell into a bowl. The telemetry cannot issue a feeding command or move meal execution into HA. See the [HA notification guide](https://github.com/e2equiel/ha-pet-feeder-local/blob/main/docs/feeding-notifications.md).

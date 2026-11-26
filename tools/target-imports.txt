@@ -35,4 +35,5 @@ strcpy
 strlen
 strncasecmp
 strncmp
+strspn
 strstr

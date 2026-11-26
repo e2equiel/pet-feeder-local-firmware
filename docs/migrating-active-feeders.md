@@ -24,13 +24,15 @@ Connect this device to HA with its new private token, confirm the household time
 
 Use one upstream go2rtc connection per feeder, shared by HA and Frigate. Replace only the selected stream source and preserve the camera name, recording settings and other streams. Check fresh frames in each view. Keep the overhead view for confirming that food actually reaches the intended bowl.
 
-Observe one deliberate manual portion and the **next normal saved meal**, keeping manual requests separate from the schedule. A full eight-row table has no spare ninth row: observe the existing meal rather than appending a test row or leaving a duplicate meal enabled. A motor sound or serial acknowledgement alone is not proof of food delivery.
+Observe the **next normal saved meal**, keeping any manual request separate from the schedule. A manual-portion test is optional when the pets have already been fed: record it as not tested and wait for the existing meal instead of dispensing extra food. A full eight-row table has no spare ninth row: do not append a test row or leave a duplicate meal enabled. A motor sound or serial acknowledgement alone is not proof of food delivery. If the camera or a pet obscures the outlet, obtain a direct physical observation rather than inferring delivery from an accepted command.
 
 For the scheduled observation, the overlay already blocks the feeder's Internet routes. Temporarily disable only its new HA entry before the meal, leaving the independent go2rtc/Frigate viewers running, then restore the entry afterward. Record the observation window and verify that no API manual-feed command was added. HA Core does not need to be stopped. The separate test-unit experiments already paused the entire Linux control application; repeating that method also interrupts its camera and needs the independent overhead view.
 
 If a meal fails, the table differs or a result is uncertain, stop the migration before moving to the next feeder. Do not blindly repeat a Serve request or overwrite a different live table. Inspect the evidence and use the installer's documented stock restoration if required. Firmware/configuration rollback and recovery of a changed MCU table are separate concerns; keep the schedule baseline.
 
 Only after both individual devices pass should they be selected together in the HA card. Switching feeders preserves separate drafts. Schedule copy replaces the destination's entire table, including enabled flags; use it only when you intend those feeders to share the displayed schedule.
+
+Two active feeders with eight enabled rows each have now completed this supervised migration. One also had an explicitly authorized temporary scheduled test; its original table and revision were restored. The other used only its next existing meal, with no manual portion or schedule write. See the [recorded results](validation.md#three-device-supervised-validation-2026-11-25) and the companion [unified dashboard guide](https://github.com/e2equiel/ha-pet-feeder-local/blob/main/docs/unified-dashboard.md).
 
 Battery and complete-power-loss testing may be deferred when outside the household's intended setup, for example with UPS-backed power. This does not establish battery behavior, clock retention after total power loss, or UPS runtime. Recheck after an actual prolonged outage.
 

@@ -1,0 +1,99 @@
+{
+  "schema": 1,
+  "recorded_through": "2026-11-25",
+  "evidence_type": "Allowlisted summary of private installation receipts and owner-confirmed physical observations; not raw device logs",
+  "physical_units": 3,
+  "supported_profile": {
+    "model": "V330L-DU4L-VS",
+    "original_application": "68.00.09",
+    "flash_mib": 8,
+    "full_mcu_revision_recorded_on_initial_unit_only": "1-C6-XALCD.0.7"
+  },
+  "overlay_version": "0.2.0",
+  "current_validated_ha_integration": "0.4.1",
+  "units": [
+    {
+      "label": "Feeder 2",
+      "role": "initial test unit",
+      "native_installer": "0.2.2",
+      "matching_complete_private_backups": true,
+      "baseline_rows": 3,
+      "baseline_enabled_rows": 0,
+      "baseline_restored_after_experiments": true,
+      "stock_restore_and_first_install_cycle": "verified_on_previously_paired_unit",
+      "manual_food_delivery": "owner_confirmed",
+      "scheduled_food_delivery": "owner_confirmed_daily_and_two_single_day_trials",
+      "scheduled_isolation": [
+        "WAN routing blocked",
+        "Linux camera/control application paused for 25 seconds",
+        "HA entry also disabled in single-day trials"
+      ],
+      "local_video": "HA and shared restream verified; Frigate decoding verified"
+    },
+    {
+      "label": "Feeder 1",
+      "role": "active unit",
+      "native_installer": "0.3.0",
+      "matching_complete_private_backups": true,
+      "baseline_rows": 8,
+      "baseline_enabled_rows": 8,
+      "all_baseline_fields_and_revision_restored": true,
+      "manual_food_delivery": "owner_confirmed_one_portion",
+      "scheduled_food_delivery": "owner_confirmed_temporary_daily_test",
+      "schedule_test": "One explicitly authorized temporary row replacement; all original rows and revision restored",
+      "scheduled_isolation": [
+        "Selected HA entry disabled",
+        "WAN routing blocked",
+        "Linux camera/control application retained for video"
+      ],
+      "local_video": "HA and shared restream verified; both observation recordings fully decoded"
+    },
+    {
+      "label": "Feeder 3",
+      "role": "active unit",
+      "native_installer": "0.3.0",
+      "matching_complete_private_backups": true,
+      "baseline_rows": 8,
+      "baseline_enabled_rows": 8,
+      "all_baseline_fields_and_revision_unchanged": true,
+      "manual_food_delivery": "not_tested_no_extra_food_requested",
+      "scheduled_food_delivery": "owner_confirmed_original_saved_meal",
+      "schedule_write_requests": 0,
+      "extra_scheduled_meals": 0,
+      "scheduled_isolation": [
+        "Selected HA entry disabled",
+        "WAN routing blocked",
+        "Linux camera/control application retained for video"
+      ],
+      "local_video": "HA and shared restream verified; both observation recordings fully decoded"
+    }
+  ],
+  "unified_dashboard": {
+    "controlled_units": [
+      "Feeder 1",
+      "Feeder 3"
+    ],
+    "camera_views": 4,
+    "selector_both_directions_verified": true,
+    "copy_destinations_explicit_and_initially_unchecked": true,
+    "copy_writes_to_real_active_units": false,
+    "copy_protocol_coverage": "disconnected synthetic tests only",
+    "mobile_viewport_css_pixels": [
+      390,
+      844
+    ],
+    "all_original_active_unit_tables_and_manual_counters_unchanged": true,
+    "ha_core_restart_for_active_unit_migrations_or_dashboard": false
+  },
+  "not_established": [
+    "Untouched factory-fresh or unpaired installation",
+    "Additional application/flash variants or separately identified MCU revisions",
+    "Battery-backed operation",
+    "Clock retention through complete power loss",
+    "UPS runtime",
+    "Prolonged offline reliability",
+    "Physical operation on every individual weekday",
+    "Actual calendar-copy writes to active household feeders",
+    "Audio or separate video substream"
+  ]
+}

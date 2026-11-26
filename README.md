@@ -8,13 +8,19 @@ Installer **0.3.0** still contains firmware overlay **0.2.0**. This is an instal
 
 Give a supported camera feeder local controls, an editable onboard feeding schedule and an authenticated RTSP camera. Pair Wi-Fi once with Tuya or Smart Life, run the installer, then use [Pet Feeder Local for Home Assistant](https://github.com/e2equiel/ha-pet-feeder-local). No Tuya developer account, cloud key or tuya-local integration is required for local operation.
 
-**Experimental community release, tested on one device.** This is a reversible firmware overlay. It retains the original proprietary camera encoder and feeding-controller firmware; it is not a complete open-source replacement image. It changes neither the bootloader nor the read-only kernel/root filesystem. The new API controls the feeding MCU directly and blocks the device's Internet routes.
+**Experimental community release, tested on three devices with the same supported application/flash profile.** This is a reversible firmware overlay. It retains the original proprietary camera encoder and feeding-controller firmware; it is not a complete open-source replacement image. It changes neither the bootloader nor the read-only kernel/root filesystem. The new API controls the feeding MCU directly and blocks the device's Internet routes.
+
+The two active feeders retained all **eight enabled meals each** and delivered scheduled food with their HA entries disabled and Internet routing blocked. The test feeder also passed stock restoration and short scheduled trials with its Linux control application paused. These are distinct checks, not a guarantee for other variants or complete power loss. See the [three-device results](docs/validation.md#three-device-supervised-validation-2026-11-25).
 
 ![The guided installer checks one explicitly selected feeder](docs/images/installer.jpg)
 
 *Native Mac installer with disconnected sample data. The Windows/Linux wizard follows the same three-step flow.*
 
 The 0.3 interface adds a quieter, accessible layout, clear installation steps, adaptive light/dark colors and a responsive portable wizard. Working feeders do not need the overlay reinstalled for this interface update. [Interface design and verification](docs/interface-design.md).
+
+![Unified HA dashboard with two feeder controls and four camera panels](docs/images/unified-dashboard-desktop.jpg)
+
+*The companion integration can manage two active feeders in one selector while displaying all three feeder cameras and an overhead view. This disconnected screenshot uses synthetic meals and illustrated camera placeholders, not household video. [Desktop/mobile previews](docs/unified-dashboard.md) · [Set up the unified dashboard](https://github.com/e2equiel/ha-pet-feeder-local/blob/main/docs/unified-dashboard.md).*
 
 ## Is my feeder supported?
 
@@ -26,9 +32,9 @@ The 0.3 interface adds a quieter, accessible layout, clear installation steps, a
 | Linux | 4.4.192V2.1 |
 | SPI flash | 8 MiB, seven matching partitions |
 | Original application SHA-256 | `f499431d38ed3cb8a4607ee870f06461e14ccb9f6f6387137b0ded2f5191a499` |
-| Observed feeding-controller version | 1-C6-XALCD.0.7 |
+| Full feeding-controller version recorded on the initial test unit | 1-C6-XALCD.0.7 |
 
-A similar-looking feeder is not necessarily compatible. The installer checks the exact application fingerprint and flash layout, and refuses unknown versions or another project's boot modification. Do not force an installation or downgrade an unknown device. Additional MCU revisions have not been validated separately.
+A similar-looking feeder is not necessarily compatible. The installer checks the exact application fingerprint and flash layout, and refuses unknown versions or another project's boot modification. Do not force an installation or downgrade an unknown device. The two additional units passed actual meal observations, but their full MCU revision strings were not independently established; this does not validate arbitrary MCU revisions.
 
 ## Install in four steps
 
